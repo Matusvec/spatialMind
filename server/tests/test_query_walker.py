@@ -154,7 +154,8 @@ async def test_run_with_memory_service():
 
     mock_memory.query_with_context.assert_called_once()
     call_args = mock_memory.query_with_context.call_args
-    assert call_args[1]["scene_id"] == "test_scene" or call_args[0][0] == "test_scene"
+    # Called with positional args: (scene_id, query, spatial_context)
+    assert call_args[0][0] == "test_scene"
     assert result["answer"] == "The table is next to the chair with a book on top."
 
 

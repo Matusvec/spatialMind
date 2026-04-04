@@ -31,6 +31,11 @@ def top_k(
     # Clamp k to available Gaussians
     k = min(k, len(similarities))
 
+    # If k covers all Gaussians, skip partial sort
+    if k >= len(similarities):
+        sorted_order = np.argsort(-similarities)
+        return sorted_order, similarities[sorted_order]
+
     # O(N) partial sort to find top-k indices
     top_k_unsorted = np.argpartition(-similarities, k)[:k]
 

@@ -63,7 +63,7 @@ Plans:
   5. CLIP embedding proximity produces an emergent object hierarchy — querying at "furniture" level returns all furniture nodes, not just exact-match objects
 **Plans:** 2 plans
 Plans:
-- [ ] 03-01-PLAN.md — DBSCAN clustering service with dynamic epsilon, spatial relationship extractor, and CLIP hierarchy builder
+- [x] 03-01-PLAN.md — DBSCAN clustering service with dynamic epsilon, spatial relationship extractor, and CLIP hierarchy builder
 - [ ] 03-02-PLAN.md — Graph builder orchestration service and POST /scene/build endpoint
 
 ### Phase 4: Agent Walkers + Backboard

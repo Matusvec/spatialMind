@@ -25,10 +25,10 @@ Requirements for hackathon demo. Each maps to roadmap phases.
 
 ### Spatial Graph (JAC)
 
-- [ ] **GRAPH-01**: DBSCAN clusters semantically similar Gaussians into object nodes with centroid positions and spatial extents
-- [ ] **GRAPH-02**: Emergent object hierarchy from CLIP embedding proximity — no hardcoded taxonomy, organic tree at any specificity level
-- [ ] **GRAPH-03**: Spatial relationship edges derived from 3D coordinates: on_top_of (Y-axis offset), next_to (XZ proximity), facing (covariance orientation), inside (containment)
-- [ ] **GRAPH-04**: Edge confidence scores based on how clearly the spatial relationship holds
+- [x] **GRAPH-01**: DBSCAN clusters semantically similar Gaussians into object nodes with centroid positions and spatial extents
+- [x] **GRAPH-02**: Emergent object hierarchy from CLIP embedding proximity — no hardcoded taxonomy, organic tree at any specificity level
+- [x] **GRAPH-03**: Spatial relationship edges derived from 3D coordinates: on_top_of (Y-axis offset), next_to (XZ proximity), facing (covariance orientation), inside (containment)
+- [x] **GRAPH-04**: Edge confidence scores based on how clearly the spatial relationship holds
 - [ ] **GRAPH-05**: QueryWalker traverses the spatial graph and synthesizes natural language answers via Backboard LLM routing + `by llm()`
 - [ ] **GRAPH-06**: ExplorationWalker autonomously catalogs all objects in the scene and writes object catalog to Backboard memory
 
@@ -113,10 +113,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | QUERY-04 | Phase 2 | Complete |
 | QUERY-05 | Phase 2 | Complete |
 | QUERY-06 | Phase 2 | Complete |
-| GRAPH-01 | Phase 3 | Pending |
-| GRAPH-02 | Phase 3 | Pending |
-| GRAPH-03 | Phase 3 | Pending |
-| GRAPH-04 | Phase 3 | Pending |
+| GRAPH-01 | Phase 3 | Complete |
+| GRAPH-02 | Phase 3 | Complete |
+| GRAPH-03 | Phase 3 | Complete |
+| GRAPH-04 | Phase 3 | Complete |
 | GRAPH-05 | Phase 4 | Pending |
 | GRAPH-06 | Phase 4 | Pending |
 | UI-01 | Phase 5 | Pending |

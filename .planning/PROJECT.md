@@ -17,6 +17,12 @@ If everything else fails, a user must be able to load a LangSplat scene, type a 
 - ✓ LangSplat 5-stage pipeline runs on Colab A100 — Phase 1
 - ✓ Training output produces PLY + .npy latents + autoencoder.pth as co-located artifacts — Phase 1
 - ✓ Pre-trained fallback scene on Google Drive as insurance — Phase 1
+- ✓ Text queries converted to CLIP vectors via open-clip-torch ViT-B-16 — Phase 2
+- ✓ Cosine similarity against all Gaussian embeddings with autoencoder decoding — Phase 2
+- ✓ Top-K retrieval returns matching Gaussians (not threshold-based) — Phase 2
+- ✓ Highlight mask endpoint returns per-Gaussian opacity values — Phase 2
+- ✓ Probability cloud with temperature-scaled softmax across all Gaussians — Phase 2
+- ✓ Multi-resolution queries at any semantic granularity — Phase 2
 
 ### Active
 
@@ -131,4 +137,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-04 after Phase 1 completion*
+*Last updated: 2026-04-04 after Phase 2 completion*

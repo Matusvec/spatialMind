@@ -61,7 +61,10 @@ Plans:
   3. Spatial relationship edges are correctly derived from 3D coordinates: on_top_of fires for objects with clear Y-axis offset, next_to fires for XZ-proximate objects
   4. Edge confidence scores distinguish clear relationships (book on desk: high confidence) from ambiguous ones (couch near table: medium confidence)
   5. CLIP embedding proximity produces an emergent object hierarchy — querying at "furniture" level returns all furniture nodes, not just exact-match objects
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 03-01-PLAN.md — DBSCAN clustering service with dynamic epsilon, spatial relationship extractor, and CLIP hierarchy builder
+- [ ] 03-02-PLAN.md — Graph builder orchestration service and POST /scene/build endpoint
 
 ### Phase 4: Agent Walkers + Backboard
 **Goal**: QueryWalker traverses the spatial graph and returns natural language answers; ExplorationWalker autonomously catalogs the scene and writes it to Backboard; multi-turn conversational context persists across follow-up queries
@@ -108,7 +111,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Training Pipeline | 0/2 | Planning complete | - |
 | 2. Semantic Query Server | 0/2 | Planning complete | - |
-| 3. Clustering + JAC Graph | 0/TBD | Not started | - |
+| 3. Clustering + JAC Graph | 0/2 | Planning complete | - |
 | 4. Agent Walkers + Backboard | 0/TBD | Not started | - |
 | 5. Frontend + InsForge | 0/TBD | Not started | - |
 | 6. Demo Integration | 0/TBD | Not started | - |

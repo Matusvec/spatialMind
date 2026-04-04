@@ -30,7 +30,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Cosine similarity smoke test on the output returns non-uniform scores (scores vary meaningfully across a "chair" vs "table" query pair — not uniformly 0.3-0.5)
   3. Pre-trained fallback scene is downloaded to Google Drive and loadable as a drop-in replacement if live training fails
   4. JacHacks venue captured with Scaniverse and training kicked off within the first hour of the hackathon
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 01-01-PLAN.md — Create LangSplat training Colab notebook and verification scripts
+- [ ] 01-02-PLAN.md — Hackathon execution runbook and notebook verification checkpoint
 
 ### Phase 2: Semantic Query Server
 **Goal**: A running Python server that accepts a text query and returns the top-K matching Gaussian indices with similarity scores, plus soft probability assignments for all Gaussians
@@ -100,7 +103,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Training Pipeline | 0/TBD | Not started | - |
+| 1. Training Pipeline | 0/2 | Planning complete | - |
 | 2. Semantic Query Server | 0/TBD | Not started | - |
 | 3. Clustering + JAC Graph | 0/TBD | Not started | - |
 | 4. Agent Walkers + Backboard | 0/TBD | Not started | - |

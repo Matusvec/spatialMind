@@ -45,6 +45,9 @@ def memory_service(mock_backboard_client):
     with patch(
         "server.services.backboard_client.BackboardClient",
         return_value=mock_backboard_client,
+    ), patch(
+        "server.services.backboard_client.BACKBOARD_AVAILABLE",
+        True,
     ):
         from server.services.backboard_client import SpatialMemoryService
 
@@ -107,7 +110,7 @@ async def test_store_catalog_calls_add_message(memory_service):
 
     memory_service.client.add_message.assert_awaited_once()
     call_kwargs = memory_service.client.add_message.call_args
-    assert catalog_text in str(call_kwargs)
+    assert call_kwargs.kwargs["content"] == catalog_text
 
 
 @pytest.mark.asyncio

@@ -76,7 +76,11 @@ Plans:
   3. Follow-up query "is any of that near the window?" correctly uses context from the previous query turn without re-stating all prior information
   4. Revisiting a previously explored scene reads spatial memory from Backboard instead of re-running DBSCAN clustering
   5. Walker traversal terminates correctly on cyclic graphs — no infinite loops, uses visited-set pattern with `disengage` when goal is met
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 04-01-PLAN.md — Backboard memory service and walker base with visited-set traversal
+- [ ] 04-02-PLAN.md — ExplorationWalker with autonomous scene cataloging and Backboard persistence
+- [ ] 04-03-PLAN.md — QueryWalker with NL answer generation and multi-turn Backboard context
 
 ### Phase 5: Frontend + InsForge
 **Goal**: Browser renders the photorealistic splat scene at interactive framerates, semantic highlighting responds to query results in real-time, graph overlay floats in 3D space, and chat interface is wired to QueryWalker
@@ -112,6 +116,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Training Pipeline | 0/2 | Planning complete | - |
 | 2. Semantic Query Server | 0/2 | Planning complete | - |
 | 3. Clustering + JAC Graph | 0/2 | Planning complete | - |
-| 4. Agent Walkers + Backboard | 0/TBD | Not started | - |
+| 4. Agent Walkers + Backboard | 0/3 | Planning complete | - |
 | 5. Frontend + InsForge | 0/TBD | Not started | - |
 | 6. Demo Integration | 0/TBD | Not started | - |

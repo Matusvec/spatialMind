@@ -78,7 +78,7 @@ Plans:
   5. Walker traversal terminates correctly on cyclic graphs — no infinite loops, uses visited-set pattern with `disengage` when goal is met
 **Plans:** 3 plans
 Plans:
-- [ ] 04-01-PLAN.md — Backboard memory service and walker base with visited-set traversal
+- [x] 04-01-PLAN.md — Backboard memory service and walker base with visited-set traversal
 - [ ] 04-02-PLAN.md — ExplorationWalker with autonomous scene cataloging and Backboard persistence
 - [ ] 04-03-PLAN.md — QueryWalker with NL answer generation and multi-turn Backboard context
 

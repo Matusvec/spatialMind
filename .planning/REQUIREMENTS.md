@@ -42,12 +42,12 @@ Requirements for hackathon demo. Each maps to roadmap phases.
 
 ### Backboard Integration
 
-- [ ] **BB-01**: Backboard assistant created with system prompt describing spatial reasoning capabilities
-- [ ] **BB-02**: Each scanned scene gets its own Backboard thread for persistent spatial memory
+- [x] **BB-01**: Backboard assistant created with system prompt describing spatial reasoning capabilities
+- [x] **BB-02**: Each scanned scene gets its own Backboard thread for persistent spatial memory
 - [ ] **BB-03**: After clustering, ExplorationWalker writes full object catalog to Backboard thread via `add_message()` with `memory="Auto"`
 - [ ] **BB-04**: QueryWalker routes spatial questions through Backboard for LLM reasoning, enriched with spatial graph context
 - [ ] **BB-05**: Multi-turn conversational context — follow-up queries retain context from previous questions in the thread
-- [ ] **BB-06**: Cross-session recall — revisiting a scene reads spatial memory from Backboard instead of re-clustering
+- [x] **BB-06**: Cross-session recall — revisiting a scene reads spatial memory from Backboard instead of re-clustering
 
 ### InsForge Integration
 
@@ -124,12 +124,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UI-03 | Phase 5 | Pending |
 | UI-04 | Phase 5 | Pending |
 | UI-05 | Phase 5 | Pending |
-| BB-01 | Phase 4 | Pending |
-| BB-02 | Phase 4 | Pending |
+| BB-01 | Phase 4 | Complete |
+| BB-02 | Phase 4 | Complete |
 | BB-03 | Phase 4 | Pending |
 | BB-04 | Phase 4 | Pending |
 | BB-05 | Phase 4 | Pending |
-| BB-06 | Phase 4 | Pending |
+| BB-06 | Phase 4 | Complete |
 | INS-01 | Phase 5 | Pending |
 | INS-02 | Phase 5 | Pending |
 | INS-03 | Phase 5 | Pending |

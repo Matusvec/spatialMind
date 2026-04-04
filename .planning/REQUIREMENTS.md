@@ -9,9 +9,9 @@ Requirements for hackathon demo. Each maps to roadmap phases.
 
 ### Training Pipeline
 
-- [ ] **TRAIN-01**: LangSplat 5-stage pipeline runs on Colab A100 (COLMAP → SAM → autoencoder → 3DGS RGB → LangSplat training)
-- [ ] **TRAIN-02**: Training output produces PLY + .npy latent features + autoencoder.pth as three co-located artifacts
-- [ ] **TRAIN-03**: Pre-trained fallback scene stored on Google Drive as insurance against training failures
+- [x] **TRAIN-01**: LangSplat 5-stage pipeline runs on Colab A100 (COLMAP → SAM → autoencoder → 3DGS RGB → LangSplat training)
+- [x] **TRAIN-02**: Training output produces PLY + .npy latent features + autoencoder.pth as three co-located artifacts
+- [x] **TRAIN-03**: Pre-trained fallback scene stored on Google Drive as insurance against training failures
 - [ ] **TRAIN-04**: Live scan of JacHacks venue at UMich captured and trained during the hackathon
 
 ### Semantic Query Engine
@@ -103,9 +103,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TRAIN-01 | Phase 1 | Pending |
-| TRAIN-02 | Phase 1 | Pending |
-| TRAIN-03 | Phase 1 | Pending |
+| TRAIN-01 | Phase 1 | Complete |
+| TRAIN-02 | Phase 1 | Complete |
+| TRAIN-03 | Phase 1 | Complete |
 | TRAIN-04 | Phase 1 | Pending |
 | QUERY-01 | Phase 2 | Pending |
 | QUERY-02 | Phase 2 | Pending |

@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. JacHacks venue captured with Scaniverse and training kicked off within the first hour of the hackathon
 **Plans:** 2 plans
 Plans:
-- [ ] 01-01-PLAN.md — Create LangSplat training Colab notebook and verification scripts
+- [x] 01-01-PLAN.md — Create LangSplat training Colab notebook and verification scripts
 - [ ] 01-02-PLAN.md — Hackathon execution runbook and notebook verification checkpoint
 
 ### Phase 2: Semantic Query Server

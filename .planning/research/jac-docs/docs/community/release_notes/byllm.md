@@ -1,0 +1,163 @@
+# byLLM Release Notes
+
+This document provides a summary of new features, improvements, and bug fixes in each version of **byLLM** (formerly MTLLM). For details on changes that might require updates to your existing code, please refer to the [Breaking Changes](../breaking-changes.md) page.
+
+## byllm 0.6.4 (Unreleased)
+
+## byllm 0.6.3 (Latest Release)
+
+- **Add: `ModelPool` for LLM fallback and load-balancing**: Introduced `ModelPool` as a drop-in replacement for `Model` - use `by pool()` exactly like `by llm()`. Internally wraps a LiteLLM `Router` running in-process (no subprocess, no proxy server) that handles fallback, retries, and load-distribution across a list of `Model` instances. Exported from `byllm.lib`. Six routing strategies are supported: `"fallback"` (ordered priority, next model on failure), `"simple-shuffle"` (random pick per call - ideal for free-tier key rotation across multiple API keys), `"cost-based-routing"` (cheapest deployment via LiteLLM's built-in cost database), `"latency-based-routing"` (fastest by EWMA-tracked response time), `"usage-based-routing"` (lowest current TPM/RPM usage), and `"least-busy"` (fewest in-flight requests). Backward compatible - no changes needed to existing `by llm()` call sites.
+- **Add: Global `ModelPool` defaults via `jac.toml`**: A new `[plugins.byllm.fallback]` section in `jac.toml` provides global defaults for `ModelPool` construction - `strategy` (default `"fallback"`), `num_retries` (default `1`), and `timeout` (default `60.0` seconds).
+
+## byllm 0.6.2
+
+- **Type Safety: `BaseLLM` implements `LLMModel` protocol**: `BaseLLM` now extends the `LLMModel` protocol defined in jaclang core, and the byllm plugin's `default_llm` hook returns `LLMModel` instead of `object`. This enables type-safe LLM model references across the full chain from the type checker through the runtime.
+
+## byllm 0.6.1
+
+- **Add: ReAct loop interrupt via `on_iteration` callback**: New `on_iteration` parameter on `by llm()` fires between iterations, returning `CONTINUE`, `ABORT`, or `ABORT_WITH_SUMMARY`. Enables stop buttons, token budgets, and doom-loop detection. Backward compatible.
+
+## byllm 0.6.0
+
+- **Security: Pin litellm to safe versions**: litellm v1.82.7+ was compromised with a credential-stealing payload (supply chain attack). Pinned dependency to `<=1.82.6` which is verified safe. See [BerriAI/litellm#24512](https://github.com/BerriAI/litellm/issues/24512) for details.
+
+## byllm 0.5.9
+
+- 1 small changes.
+
+## byllm 0.5.8
+
+- **Add: Configurable LiteLLM debug logging via `jac.toml`**: LiteLLM's verbose logging (HTTP requests, retries, headers) can now be toggled via `[plugins.byllm.litellm] debug = true/false` in `jac.toml`. Defaults to `false` (quiet). When disabled, `_disable_debugging()` silences LiteLLM's internal loggers, reducing stdout noise. byLLM's own exception logging (`logger.error`) is unaffected, errors are always logged and propagated regardless of this setting.
+- **Add: LLM Telemetry & Observability**: Introduced a lightweight agent telemetry publish mechanism (`byllm/telemetry.jac`) that emits structured per-invocation records (caller, user prompt, agent response, token usage, cost, and latency) at the end of every `Model.invoke()` call without storing any data in byllm itself.
+- **Add: Invocation ID correlation**: `Model.invoke()` now stamps a UUID `invocation_id` across all LLM calls in a ReAct loop, enabling external consumers (e.g., jac-scale) to correlate per-call litellm events with the top-level agent invocation into a single unified trace.
+
+## byllm 0.5.7
+
+## byllm 0.5.6
+
+## byllm 0.5.5
+
+- Small refactors/formatting fixes.
+
+## byllm 0.5.4
+
+- 2 small refactors/changes.
+- **Add: Explicit LLM exceptions**: Introduced `jac-byllm/byllm/exceptions.jac` to define clear exception types for LLM and tooling failures (improves diagnosability and retry logic).
+- **Fix: Error handling & propagation**: Updated LLM implementations and core modules (`byllm/lib.jac`, `byllm/llm.jac`, `byllm/mtir.jac`, `byllm/schema.jac`, `byllm/llm.impl/*`, `byllm/types.*`) to raise and propagate the new exceptions instead of swallowing or returning generic errors.
+- **Tests: Updated to assert exception semantics**: `jac-byllm/tests/test_byllm.jac` and related tests now validate the new failure modes and edge cases.
+- **Fix: `JSONDecodeError` when gpt-4o returns text alongside a tool call**: Fixed a crash where `parse_response` was called before `tool_calls_list` was extracted from the LLM message. `gpt-4o` sometimes returns a brief plain-text string alongside a tool call (e.g. `"I'll handle that."`), which bypassed the empty-string guard and caused `json.loads` to fail with `Expecting value: line 1 column 1`. The fix extracts `tool_calls_list` first and skips `parse_response` entirely when tool calls are present, the typed output comes from `finish_tool`, not from the message content field.
+- **Fix: `JSONDecodeError` / `AttributeError` when gpt-4o ignores `finish_tool` on follow-up turns**: `gpt-4o` does not reliably follow the `INSTRUCTION_TOOL` system prompt on multi-turn conversations and sometimes responds with plain conversational text instead of calling `finish_tool`. This caused two cascading failures: `json.loads` crashed on the plain-text response, and even if it didn't, `invoke` would break out of the ReAct loop returning a raw `str` where a structured type was expected. Fixed with two complementary changes: (1) `parse_response` now wraps `json.loads` in `try/except Exception` and returns the raw string on failure rather than crashing; (2) the `invoke` ReAct loop detects the no-tool-call / structured-type mismatch, appends a correction message, and re-invokes with only `finish_tool` available, recovering the typed result without an extra round-trip in the happy path.
+- **Fix: `NameError: name 'logger' is not defined` when a tool raises an exception**: `tool.impl.jac` called `logger.exception(...)` in the `Tool.__call__` error handler, but `logger` was not imported in `types.jac` (the module that owns the `Tool` type). Added `import logging` and `glob logger = logging.getLogger(__name__)` to `types.jac` so tool failures are logged correctly instead of raising a secondary `NameError`.
+- **Add: Structured streaming event system (`StreamEvent`)**: Introduced a `StreamEvent` type in `byllm/types.jac` representing unified streaming output events (thoughts, tool calls, tool results, and answer chunks). `BaseLLM.invoke` now detects when logging is enabled with streaming and routes calls to a new `_invoke_streaming` method that yields `StreamEvent` objects for all intermediate steps and final answer tokens. The final-answer streaming step clears all tools so the LLM produces plain text rather than re-invoking `finish_tool`. `StreamEvent` is exported via `byllm/lib.jac` and `byllm/llm.jac` and `_invoke_streaming` is added to the `BaseLLM` public interface. This enables more granular, structured streaming output useful for debugging and UI integration.
+
+## byllm 0.5.3
+
+## byllm 0.5.2
+
+- **Chore: Codebase Reformatted**: All `.jac` files reformatted with improved `jac format` (better line-breaking, comment spacing, and ternary indentation).
+
+## byllm 0.5.1
+
+- **Fix: Enum/structured return types failing with Anthropic models**: Fixed a bug where `by llm()` functions returning non-string types (enums, objects) would crash with Anthropic/Claude models (`"Attempted to call tool: 'json_tool_call' which was not present"`). The issue was that `finish_tool` was only added when explicit tools were provided, so when no tools were passed but a structured return type was set, LiteLLM's Anthropic adapter would inject a hidden `json_tool_call` tool that byllm couldn't find. The fix ensures `finish_tool` is always created for non-string return types, regardless of whether explicit tools are provided.
+- **Fix: ReAct final answer tool calling error with Anthropic models**: Fixed a bug where the ReAct loop's final answer step would clear `tools=[]`, causing Anthropic to fail when the conversation history already contained tool call results (`"tools must be defined"` / `"tools must not be empty"`). The fix retains `finish_tool` in the tools list during the final answer step (for both streaming and non-streaming paths) and also handles the case where Anthropic returns the final answer via a `finish_tool` call rather than plain text.
+- **Dependency: LiteLLM updated to `>=1.81.15,<1.83.0`**: The minimum LiteLLM version has been raised from `1.75.5.post1` to `1.81.15` to pick up Anthropic tool-calling fixes. If you have other packages pinning LiteLLM below `1.81.15`, you will need to update them.
+
+## byllm 0.5.0
+
+- **Builtin `llm` for Zero-Config `by llm()`**: The `llm` name is now a builtin, so `by llm()` works without any explicit import or `glob llm = ...` declaration. The byllm plugin provides a `default_llm` hook that automatically returns a configured `Model` instance from `jac.toml` settings. Users can still override the builtin by defining `glob llm = ...` in their module.
+
+## byllm 0.4.21
+
+- **Deprecated `method` parameter**: The `method` parameter (`"ReAct"`, `"Reason"`, `"Chain-of-Thoughts"`) in `by llm()` is now deprecated and emits a `DeprecationWarning`. It was never functional; the ReAct tool-calling loop is automatically enabled when `tools=[...]` is provided. Simply pass `tools` directly instead of using `method="ReAct"`.
+
+## byllm 0.4.20
+
+- Minor internal refactors
+
+## byllm 0.4.19
+
+- Various refactors
+- **Fix: `api_key` parameter no longer silently ignored**: The `api_key` passed via constructor, instance config, or global config (`jac.toml`) was being overwritten with `None` before every LLM call. The key is now properly resolved with a clear priority chain (constructor > instance config > global config > environment variables) and passed to LiteLLM, OpenAI client, and HTTP calls. API keys are also masked in verbose logs, showing only the last 4 characters.
+- **Fix: MTIR scope key mismatch between compile-time and runtime**: Fixed a bug where MTIR entries stored at compile-time could not be retrieved at runtime due to mismatched scope keys. At compile-time, the scope key was generated using the module's file path, while at runtime it used `__main__`. This caused `by llm()` calls to silently fall back to introspection mode, losing all `sem` string descriptions. The fix uses `sys.modules['__main__'].__file__` at runtime to get the entry point's file path, then extracts the file stem to match the compile-time scope key format.
+
+## byllm 0.4.18
+
+## byllm 0.4.17
+
+- **Enum Semantic Strings in Schema**: Added support for extracting semantic strings from enum members at compile time. Enum member descriptions (e.g., `sem Personality.INTROVERT = "Person who is reserved..."`) are now included in LLM schemas, providing richer context for enum selection.
+
+## byllm 0.4.16
+
+- **MTIR-Powered Schema Generation**: `MTRuntime` now uses compile-time MTIR info for generating JSON schemas with semantic descriptions. Tool and return type schemas include semstrings extracted at compile time, providing richer context for LLM calls.
+- **Python Library Fallback Mode**: When MTIR is unavailable (e.g., using byLLM as a Python library without Jac compilation), the runtime gracefully falls back to introspection-based schema generation, maintaining backward compatibility.
+- **Schema Generation Fixes**: Fixed several issues in schema generation that were exposed when MTIR data became correctly available:
+  - **Union Type Null Safety**: Fixed `NoneType has no attribute 'type_info'` errors when processing Union types like `str | None`.
+  - **Dataclass Inherited Fields**: Schema now correctly includes inherited fields from base classes (e.g., `Dog | Cat` union now includes `name`, `age` from `Pet` base class).
+  - **Required Fields Validation**: Fixed OpenAI schema validation error ("Extra required key supplied") by only listing fields that actually exist in `properties`.
+  - **Function Schema Fallback**: Dynamically created tools (like `finish_tool`) now work correctly even without MTIR info by falling back to function introspection.
+- **Internal**: Explicitly declared all postinit fields across the codebase.
+
+- **Internal refactors**: Removed orphaned files, etc.
+
+## byllm 0.4.15
+
+- **Direct HTTP model calls:** Added support for calling custom LLM endpoints via direct HTTP (`http_client` in model config).
+
+## byllm 0.4.14
+
+- **Max Iterations for ReAct (`max_react_iterations`)**: Added a configurable limit for ReAct tool-calling loops via `by llm(max_react_iterations=3)` to prevent overly long or endless reasoning cycles. When the limit is reached, the model stops calling tools and returns a final answer based on the information gathered so far.
+
+## byllm 0.4.13
+
+## byllm 0.4.12
+
+## byllm 0.4.9
+
+- **LLM-Powered Graph Traversal (`visit by`)**: Introduced `visit [-->] by llm()` syntax enabling walkers to make intelligent traversal decisions. The LLM analyzes the semantic context of available nodes and selects which ones to visit based on the walker's purpose, bringing AI-powered decision making to graph navigation.
+
+## byllm 0.4.8
+
+- **Streaming with ReAct Tool Calling**: Implemented real-time streaming support for ReAct method when using tools. After tool execution completes, the LLM now streams the final synthesized answer token-by-token, providing the best of both worlds: structured tool calling with streaming responses.
+
+## byllm 0.4.7
+
+- **Custom Model Declaration**: Custom model interfaces can be defined by using the `BaseLLM` class that can be imported form `byllm.lib`. A guide for using this feature is added to [documentation](https://docs.jaseci.org/learn/jac-byllm/create_own_lm/).
+
+## byllm 0.4.6
+
+- **byLLM In-Memory Images**: byLLM Image class now accepts in-memory and path-like inputs (bytes/bytearray/memoryview, BytesIO/file-like, PIL.Image, Path), plus data/gs/http(s) URLs; auto-detects MIME (incl. WEBP), preserves URLs, and reads streams.
+
+## byllm 0.4.5
+
+- **byLLM Lazy Loading**: Refactored byLLM to support lazy loading by moving all exports to `byllm.lib` module. Users should now import from `byllm.lib` in Python (e.g., `from byllm.lib import Model, by`) and use `import from byllm.lib { Model }` in Jac code. This improves startup performance and reduces unnecessary module loading.
+- **NonGPT Fallback for byLLM**: Implemented automatic fallback when byLLM is not installed. When code attempts to import `byllm`, the system will provide mock implementations that return random values using the `NonGPT.random_value_for_type()` utility.
+
+## byllm 0.4.4
+
+- **`is` Keyword for Semstrings**: Added support for using `is` as an alternative to `=` in semantic string declarations (e.g., `sem MyObject.value is "A value stored in MyObject"`).
+- **byLLM Plugin Interface Improved**: Enhanced the byLLM plugin interface with `get_mtir` function hook interface and refactored the `by` decorator to use the plugin system, improving integration and extensibility.
+
+## byllm 0.4.3
+
+- **byLLM Enhancements**:
+  - Fixed bug with Enums without values not being properly included in prompts (e.g., `enum Tell { YES, NO }` now works correctly).
+
+## byllm 0.4.2
+
+- **byLLM transition**: MTLLM has been transitioned to byLLM and PyPi package is renamed to `byllm`. Github actions are changed to push byllm PyPi. Alongside an mtllm PyPi will be pushed which installs latest `byllm` and produces a deprecation warning when imported as `mtllm`.
+- **byLLM Feature Methods as Tools**: byLLM now supports adding methods of classes as tools for the llm using such as `tools=[ToolHolder.tool]`
+
+## byllm 0.4.1
+
+- **byLLM transition**: MTLLM has been transitioned to byLLM and PyPi package is renamed to `byllm`. Github actions are changed to push byllm PyPi. Alongside an mtllm PyPi will be pushed which installs latest `byllm` and produces a deprecation warning when imported as `mtllm`.
+
+## mtllm 0.4.0
+
+- **Removed LLM Override**: `function_call() by llm()` has been removed as it was introduce ambiguity in the grammer with LALR(1) shift/reduce error. This feature will be reintroduced in a future release with a different syntax.
+
+## mtllm 0.3.8
+
+- **Semantic Strings**: Introduced `sem` strings to attach natural language descriptions to code elements like functions, classes, and parameters. These semantic annotations can be used by Large Language Models (LLMs) to enable intelligent, AI-powered code generation and execution. (mtllm)
+- **LLM Function Overriding**: Introduced the ability to override any regular function with an LLM-powered implementation at runtime using the `function_call() by llm()` syntax. This allows for dynamic, on-the-fly replacement of function behavior with generative models. (mtllm)
+
+## Version 0.8.0

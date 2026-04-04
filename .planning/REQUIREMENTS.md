@@ -29,7 +29,7 @@ Requirements for hackathon demo. Each maps to roadmap phases.
 - [x] **GRAPH-02**: Emergent object hierarchy from CLIP embedding proximity — no hardcoded taxonomy, organic tree at any specificity level
 - [x] **GRAPH-03**: Spatial relationship edges derived from 3D coordinates: on_top_of (Y-axis offset), next_to (XZ proximity), facing (covariance orientation), inside (containment)
 - [x] **GRAPH-04**: Edge confidence scores based on how clearly the spatial relationship holds
-- [ ] **GRAPH-05**: QueryWalker traverses the spatial graph and synthesizes natural language answers via Backboard LLM routing + `by llm()`
+- [x] **GRAPH-05**: QueryWalker traverses the spatial graph and synthesizes natural language answers via Backboard LLM routing + `by llm()`
 - [x] **GRAPH-06**: ExplorationWalker autonomously catalogs all objects in the scene and writes object catalog to Backboard memory
 
 ### Frontend (Partner)
@@ -45,8 +45,8 @@ Requirements for hackathon demo. Each maps to roadmap phases.
 - [x] **BB-01**: Backboard assistant created with system prompt describing spatial reasoning capabilities
 - [x] **BB-02**: Each scanned scene gets its own Backboard thread for persistent spatial memory
 - [x] **BB-03**: After clustering, ExplorationWalker writes full object catalog to Backboard thread via `add_message()` with `memory="Auto"`
-- [ ] **BB-04**: QueryWalker routes spatial questions through Backboard for LLM reasoning, enriched with spatial graph context
-- [ ] **BB-05**: Multi-turn conversational context — follow-up queries retain context from previous questions in the thread
+- [x] **BB-04**: QueryWalker routes spatial questions through Backboard for LLM reasoning, enriched with spatial graph context
+- [x] **BB-05**: Multi-turn conversational context — follow-up queries retain context from previous questions in the thread
 - [x] **BB-06**: Cross-session recall — revisiting a scene reads spatial memory from Backboard instead of re-clustering
 
 ### InsForge Integration
@@ -117,7 +117,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GRAPH-02 | Phase 3 | Complete |
 | GRAPH-03 | Phase 3 | Complete |
 | GRAPH-04 | Phase 3 | Complete |
-| GRAPH-05 | Phase 4 | Pending |
+| GRAPH-05 | Phase 4 | Complete |
 | GRAPH-06 | Phase 4 | Complete |
 | UI-01 | Phase 5 | Pending |
 | UI-02 | Phase 5 | Pending |
@@ -127,8 +127,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BB-01 | Phase 4 | Complete |
 | BB-02 | Phase 4 | Complete |
 | BB-03 | Phase 4 | Complete |
-| BB-04 | Phase 4 | Pending |
-| BB-05 | Phase 4 | Pending |
+| BB-04 | Phase 4 | Complete |
+| BB-05 | Phase 4 | Complete |
 | BB-06 | Phase 4 | Complete |
 | INS-01 | Phase 5 | Pending |
 | INS-02 | Phase 5 | Pending |

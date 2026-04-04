@@ -80,7 +80,7 @@ Plans:
 Plans:
 - [x] 04-01-PLAN.md — Backboard memory service and walker base with visited-set traversal
 - [x] 04-02-PLAN.md — ExplorationWalker with autonomous scene cataloging and Backboard persistence
-- [ ] 04-03-PLAN.md — QueryWalker with NL answer generation and multi-turn Backboard context
+- [x] 04-03-PLAN.md — QueryWalker with NL answer generation and multi-turn Backboard context
 
 ### Phase 5: Frontend + InsForge
 **Goal**: Browser renders the photorealistic splat scene at interactive framerates, semantic highlighting responds to query results in real-time, graph overlay floats in 3D space, and chat interface is wired to QueryWalker

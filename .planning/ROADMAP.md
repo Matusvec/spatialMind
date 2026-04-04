@@ -64,7 +64,7 @@ Plans:
 **Plans:** 2 plans
 Plans:
 - [x] 03-01-PLAN.md — DBSCAN clustering service with dynamic epsilon, spatial relationship extractor, and CLIP hierarchy builder
-- [ ] 03-02-PLAN.md — Graph builder orchestration service and POST /scene/build endpoint
+- [x] 03-02-PLAN.md — Graph builder orchestration service and POST /scene/build endpoint
 
 ### Phase 4: Agent Walkers + Backboard
 **Goal**: QueryWalker traverses the spatial graph and returns natural language answers; ExplorationWalker autonomously catalogs the scene and writes it to Backboard; multi-turn conversational context persists across follow-up queries

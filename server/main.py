@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from server.config import Settings
 from server.models.autoencoder import load_autoencoder
-from server.routers import clip, health, scene
+from server.routers import clip, health, scene, walker
 from server.services.clip_encoder import CLIPEncoder
 from server.services.gaussian_store import GaussianStore
 
@@ -32,6 +32,8 @@ _app_state: dict = {
     "gaussian_store": None,
     "clip_encoder": None,
     "scene_graph": None,
+    "memory_service": None,
+    "exploration_catalog": None,
 }
 
 
@@ -118,6 +120,21 @@ async def lifespan(app: FastAPI):
         logger.warning("Failed to load CLIP encoder: %s", exc)
         _app_state["clip_encoder"] = None
 
+    # --- Initialize Backboard memory service ---
+    backboard_key = config.backboard_api_key
+    if backboard_key:
+        try:
+            from server.services.backboard_client import SpatialMemoryService
+
+            memory_service = SpatialMemoryService(backboard_key)
+            await memory_service.initialize()
+            _app_state["memory_service"] = memory_service
+            logger.info("Backboard memory service initialized")
+        except Exception as exc:
+            logger.warning("Failed to initialize Backboard: %s", exc)
+    else:
+        logger.info("BACKBOARD_API_KEY not set — memory service disabled")
+
     elapsed = time.time() - start_time
     logger.info(
         "Startup complete in %.1fs | Gaussians: %d | Device: %s | CLIP: %s",
@@ -157,6 +174,7 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(clip.router)
 app.include_router(scene.router)
+app.include_router(walker.router)
 
 
 if __name__ == "__main__":

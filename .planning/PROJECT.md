@@ -60,6 +60,23 @@ If everything else fails, a user must be able to load a LangSplat scene, type a 
 - Backend (owner): Gaussian splatting pipeline, LangSplat training, Python server with CLIP, JAC graph + walkers, Backboard, spatial reasoning
 - Frontend (partner): React UI, Spark.js viewer, graph visualization, chat interface, highlighting
 
+### Integration Architecture
+
+**Backboard (backboard.io):** Unified AI infrastructure API — persistent memory, stateful conversations, RAG, 17,000+ LLM routing.
+- **Spatial Memory Layer:** ExplorationWalker writes full object catalog to a Backboard thread after clustering. On revisit, reads from Backboard instead of re-clustering. Scene "remembers" across sessions.
+- **Conversational Spatial Queries:** QueryWalker uses Backboard threads for multi-turn context. "What's on the table?" → follow-up "is any of that near the window?" retains context.
+- **Cross-Scene Knowledge:** Multiple scanned rooms share Backboard memory. "Did we see a printer in any room?" searches across all scene memories.
+- **LLM Routing:** Use Backboard's built-in LLM routing instead of managing separate API keys.
+- Python SDK: `from backboard import BackboardClient`
+
+**InsForge (insforge.dev):** YC-backed backend platform for AI agents — PostgreSQL, auth, S3 storage, edge functions, MCP-controllable.
+- **Splat File Storage:** S3-compatible storage for PLY, .npy embeddings, autoencoder weights.
+- **Scene Metadata DB:** PostgreSQL stores scene ID, training status, object count, bounding box, thumbnails.
+- **User Auth:** InsForge auth for multi-user scene libraries.
+- **Edge Functions:** Webhook when Colab training completes → update scene status in DB.
+
+**Priority:** Core demo must work without integrations (hardcoded scene, in-memory graph). Then layer in InsForge for storage/auth and Backboard for memory/LLM.
+
 ### Domain Context
 
 - Spatial AI is a $45B+ investment category (2024-2026)

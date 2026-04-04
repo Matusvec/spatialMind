@@ -103,46 +103,46 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TRAIN-01 | TBD | Pending |
-| TRAIN-02 | TBD | Pending |
-| TRAIN-03 | TBD | Pending |
-| TRAIN-04 | TBD | Pending |
-| QUERY-01 | TBD | Pending |
-| QUERY-02 | TBD | Pending |
-| QUERY-03 | TBD | Pending |
-| QUERY-04 | TBD | Pending |
-| QUERY-05 | TBD | Pending |
-| QUERY-06 | TBD | Pending |
-| GRAPH-01 | TBD | Pending |
-| GRAPH-02 | TBD | Pending |
-| GRAPH-03 | TBD | Pending |
-| GRAPH-04 | TBD | Pending |
-| GRAPH-05 | TBD | Pending |
-| GRAPH-06 | TBD | Pending |
-| UI-01 | TBD | Pending |
-| UI-02 | TBD | Pending |
-| UI-03 | TBD | Pending |
-| UI-04 | TBD | Pending |
-| UI-05 | TBD | Pending |
-| BB-01 | TBD | Pending |
-| BB-02 | TBD | Pending |
-| BB-03 | TBD | Pending |
-| BB-04 | TBD | Pending |
-| BB-05 | TBD | Pending |
-| BB-06 | TBD | Pending |
-| INS-01 | TBD | Pending |
-| INS-02 | TBD | Pending |
-| INS-03 | TBD | Pending |
-| INS-04 | TBD | Pending |
-| DEMO-01 | TBD | Pending |
-| DEMO-02 | TBD | Pending |
-| DEMO-03 | TBD | Pending |
+| TRAIN-01 | Phase 1 | Pending |
+| TRAIN-02 | Phase 1 | Pending |
+| TRAIN-03 | Phase 1 | Pending |
+| TRAIN-04 | Phase 1 | Pending |
+| QUERY-01 | Phase 2 | Pending |
+| QUERY-02 | Phase 2 | Pending |
+| QUERY-03 | Phase 2 | Pending |
+| QUERY-04 | Phase 2 | Pending |
+| QUERY-05 | Phase 2 | Pending |
+| QUERY-06 | Phase 2 | Pending |
+| GRAPH-01 | Phase 3 | Pending |
+| GRAPH-02 | Phase 3 | Pending |
+| GRAPH-03 | Phase 3 | Pending |
+| GRAPH-04 | Phase 3 | Pending |
+| GRAPH-05 | Phase 4 | Pending |
+| GRAPH-06 | Phase 4 | Pending |
+| UI-01 | Phase 5 | Pending |
+| UI-02 | Phase 5 | Pending |
+| UI-03 | Phase 5 | Pending |
+| UI-04 | Phase 5 | Pending |
+| UI-05 | Phase 5 | Pending |
+| BB-01 | Phase 4 | Pending |
+| BB-02 | Phase 4 | Pending |
+| BB-03 | Phase 4 | Pending |
+| BB-04 | Phase 4 | Pending |
+| BB-05 | Phase 4 | Pending |
+| BB-06 | Phase 4 | Pending |
+| INS-01 | Phase 5 | Pending |
+| INS-02 | Phase 5 | Pending |
+| INS-03 | Phase 5 | Pending |
+| INS-04 | Phase 5 | Pending |
+| DEMO-01 | Phase 6 | Pending |
+| DEMO-02 | Phase 6 | Pending |
+| DEMO-03 | Phase 6 | Pending |
 
 **Coverage:**
 - v1 requirements: 34 total
-- Mapped to phases: 0
-- Unmapped: 34
+- Mapped to phases: 34
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-04*
-*Last updated: 2026-04-04 after initial definition*
+*Last updated: 2026-04-04 after roadmap creation — all 34 requirements mapped*

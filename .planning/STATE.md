@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-04-04T19:23:09.425Z"
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-04-04T19:52:55.373Z"
 last_activity: 2026-04-04
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 4
+  completed_plans: 3
   percent: 0
 ---
 
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-04)
 
 **Core value:** An AI that understands 3D space as a structured graph, queryable with natural language, powered by semantically-embedded Gaussians — giving physical spaces a mind.
-**Current focus:** Phase 01 — training-pipeline
+**Current focus:** Phase 02 — semantic-query-server
 
 ## Current Position
 
-Phase: 2
-Plan: Not started
+Phase: 02 (semantic-query-server) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
 Last activity: 2026-04-04
 
@@ -53,6 +53,7 @@ Progress: [░░░░░░░░░░] 0%
 
 *Updated after each plan completion*
 | Phase 01-training-pipeline P01 | 4min | 2 tasks | 3 files |
+| Phase 02 P01 | 10min | 2 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -67,6 +68,10 @@ Recent decisions affecting current work:
 - [Init]: DBSCAN for clustering — handles arbitrary shapes, no need to predefine object count
 - [Phase 01-training-pipeline]: All-in-one Colab notebook with 10 sequential cells, Google Drive persistence, 5K checkpoint intervals
 - [Phase 01-training-pipeline]: Consolidated artifacts/ directory as canonical path for all downstream phases
+- [Phase 02]: Lifespan context manager over deprecated on_event for FastAPI startup
+- [Phase 02]: LRU cache (256 entries) on CLIP encode_text for repeated query performance
+- [Phase 02]: argpartition-based top-K for O(N) retrieval instead of full sort
+- [Phase 02]: Graceful artifact loading: server starts without PLY/autoencoder, reports via /health
 
 ### Pending Todos
 
@@ -82,6 +87,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-04T19:11:20.190Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-04-04T19:52:55.371Z
+Stopped at: Completed 02-01-PLAN.md
 Resume file: None

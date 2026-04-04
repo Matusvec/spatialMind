@@ -45,7 +45,10 @@ Plans:
   3. `POST /clip/highlight` returns a highlight mask (per-Gaussian opacity values) usable by the browser renderer
   4. Probability cloud endpoint returns per-Gaussian soft assignment scores across all discovered clusters, not a binary match
   5. Multi-resolution query ("furniture" vs "seating" vs "Herman Miller") returns different Gaussian sets at each granularity level
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 02-01-PLAN.md — Core query pipeline: FastAPI server, PLY loading, CLIP encoding, cosine similarity, top-K retrieval
+- [ ] 02-02-PLAN.md — Highlight mask and probability cloud endpoints with multi-resolution support
 **UI hint**: yes
 
 ### Phase 3: Clustering + JAC Graph
@@ -104,7 +107,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Training Pipeline | 0/2 | Planning complete | - |
-| 2. Semantic Query Server | 0/TBD | Not started | - |
+| 2. Semantic Query Server | 0/2 | Planning complete | - |
 | 3. Clustering + JAC Graph | 0/TBD | Not started | - |
 | 4. Agent Walkers + Backboard | 0/TBD | Not started | - |
 | 5. Frontend + InsForge | 0/TBD | Not started | - |

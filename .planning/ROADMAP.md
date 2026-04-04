@@ -48,7 +48,7 @@ Plans:
 **Plans:** 2 plans
 Plans:
 - [x] 02-01-PLAN.md — Core query pipeline: FastAPI server, PLY loading, CLIP encoding, cosine similarity, top-K retrieval
-- [ ] 02-02-PLAN.md — Highlight mask and probability cloud endpoints with multi-resolution support
+- [x] 02-02-PLAN.md — Highlight mask and probability cloud endpoints with multi-resolution support
 **UI hint**: yes
 
 ### Phase 3: Clustering + JAC Graph

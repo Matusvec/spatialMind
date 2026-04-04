@@ -19,9 +19,9 @@ Requirements for hackathon demo. Each maps to roadmap phases.
 - [x] **QUERY-01**: Text input is converted to CLIP vector via open-clip-torch on Python server
 - [x] **QUERY-02**: Cosine similarity computed between CLIP text vector and all Gaussian embeddings (autoencoder decodes 3-dim latents → 512-dim CLIP space)
 - [x] **QUERY-03**: Top-K retrieval returns matching Gaussians (not threshold-based — CLIP scores aren't calibrated)
-- [ ] **QUERY-04**: Matching Gaussians are highlighted in the browser 3D scene via highlight mask sent from server
-- [ ] **QUERY-05**: Probability cloud layer — each Gaussian carries soft assignment scores across all discovered object nodes, queryable as a continuous semantic field
-- [ ] **QUERY-06**: Multi-resolution queries work at any granularity ("furniture" → couch+table, "seating" → just couch, "Herman Miller Aeron" → specific chair)
+- [x] **QUERY-04**: Matching Gaussians are highlighted in the browser 3D scene via highlight mask sent from server
+- [x] **QUERY-05**: Probability cloud layer — each Gaussian carries soft assignment scores across all discovered object nodes, queryable as a continuous semantic field
+- [x] **QUERY-06**: Multi-resolution queries work at any granularity ("furniture" → couch+table, "seating" → just couch, "Herman Miller Aeron" → specific chair)
 
 ### Spatial Graph (JAC)
 
@@ -110,9 +110,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | QUERY-01 | Phase 2 | Complete |
 | QUERY-02 | Phase 2 | Complete |
 | QUERY-03 | Phase 2 | Complete |
-| QUERY-04 | Phase 2 | Pending |
-| QUERY-05 | Phase 2 | Pending |
-| QUERY-06 | Phase 2 | Pending |
+| QUERY-04 | Phase 2 | Complete |
+| QUERY-05 | Phase 2 | Complete |
+| QUERY-06 | Phase 2 | Complete |
 | GRAPH-01 | Phase 3 | Pending |
 | GRAPH-02 | Phase 3 | Pending |
 | GRAPH-03 | Phase 3 | Pending |

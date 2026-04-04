@@ -14,7 +14,9 @@ If everything else fails, a user must be able to load a LangSplat scene, type a 
 
 ### Validated
 
-(None yet — ship to validate)
+- ✓ LangSplat 5-stage pipeline runs on Colab A100 — Phase 1
+- ✓ Training output produces PLY + .npy latents + autoencoder.pth as co-located artifacts — Phase 1
+- ✓ Pre-trained fallback scene on Google Drive as insurance — Phase 1
 
 ### Active
 
@@ -129,4 +131,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-04 after initialization*
+*Last updated: 2026-04-04 after Phase 1 completion*

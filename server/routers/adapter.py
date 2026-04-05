@@ -296,7 +296,7 @@ async def api_scenes():
 
 @router.get("/scene/splat")
 async def api_scene_splat():
-    """Serve the .splat file from the scene artifacts directory."""
+    """Serve the scene file (.splat or .ply) from the artifacts directory."""
     from server.main import get_app_state
 
     state = get_app_state()
@@ -305,15 +305,23 @@ async def api_scene_splat():
         raise HTTPException(status_code=503, detail="Server not initialized.")
 
     artifacts_dir = os.path.join(config.scene_dir, "artifacts")
-    splat_files = glob.glob(os.path.join(artifacts_dir, "*.splat"))
 
-    if not splat_files:
-        raise HTTPException(status_code=404, detail="No .splat file found.")
+    # Try .splat first, then .ply (Spark.js supports both)
+    for ext in ["*.splat", "*.ply", "*.spz", "*.ksplat"]:
+        files = glob.glob(os.path.join(artifacts_dir, ext))
+        if files:
+            # Resolve symlinks to get real path
+            real_path = os.path.realpath(files[0])
+            logger.info("Serving scene file: %s (%s)", real_path, ext)
+            return FileResponse(
+                real_path,
+                media_type="application/octet-stream",
+                filename=os.path.basename(files[0]),
+            )
 
-    return FileResponse(
-        splat_files[0],
-        media_type="application/octet-stream",
-        filename=os.path.basename(splat_files[0]),
+    raise HTTPException(
+        status_code=404,
+        detail="No scene file found. Checked for .splat, .ply, .spz, .ksplat",
     )
 
 

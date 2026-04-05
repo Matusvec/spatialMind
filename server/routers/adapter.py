@@ -317,7 +317,49 @@ async def api_scene_splat():
     )
 
 
-# --- 7. Memory stub ---
+# --- 7. CLIP proxy endpoints (for SparkRenderer highlight/heatmap) ---
+
+
+@router.post("/clip/highlight")
+async def api_clip_highlight(body: dict):
+    """Proxy to /clip/highlight for Spark.js semantic highlighting."""
+    from server.main import get_app_state
+
+    state = get_app_state()
+    gaussian_store = state.get("gaussian_store")
+    clip_encoder = state.get("clip_encoder")
+
+    if not gaussian_store or not clip_encoder or gaussian_store.decoded_embeddings is None:
+        raise HTTPException(status_code=503, detail="CLIP pipeline not ready.")
+
+    from server.services.similarity import top_k, highlight_mask
+
+    text_embedding = clip_encoder.encode_text(body.get("text", ""))
+    indices, scores = top_k(text_embedding, gaussian_store.decoded_embeddings, k=body.get("k", 100))
+    mask = highlight_mask(scores, indices, gaussian_store.count)
+    return {"mask": mask.tolist(), "indices": indices.tolist(), "scores": scores.tolist()}
+
+
+@router.post("/clip/probability")
+async def api_clip_probability(body: dict):
+    """Proxy to /clip/probability for probability cloud heatmap."""
+    from server.main import get_app_state
+
+    state = get_app_state()
+    gaussian_store = state.get("gaussian_store")
+    clip_encoder = state.get("clip_encoder")
+
+    if not gaussian_store or not clip_encoder or gaussian_store.decoded_embeddings is None:
+        raise HTTPException(status_code=503, detail="CLIP pipeline not ready.")
+
+    from server.services.similarity import probability_cloud
+
+    text_embedding = clip_encoder.encode_text(body.get("text", ""))
+    scores = probability_cloud(text_embedding, gaussian_store.decoded_embeddings, temperature=body.get("temperature", 0.07))
+    return {"scores": scores.tolist()}
+
+
+# --- 8. Memory stub ---
 
 
 @router.get("/memory/{session_id}")

@@ -19,5 +19,6 @@ class Settings(BaseSettings):
     clip_pretrained: str = "laion2b_s34b_b88k"
     default_top_k: int = 100
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
+    fallback_scene_dir: str = "./data/fallback_scene"
     backboard_api_key: str = ""
     openai_api_key: str = ""

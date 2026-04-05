@@ -34,6 +34,7 @@ _app_state: dict = {
     "scene_graph": None,
     "memory_service": None,
     "exploration_catalog": None,
+    "scene_source": "none",
 }
 
 
@@ -75,7 +76,7 @@ async def lifespan(app: FastAPI):
         )
     _app_state["autoencoder"] = autoencoder
 
-    # --- Load Gaussian store ---
+    # --- Load Gaussian store (with fallback) ---
     gaussian_store = GaussianStore(config)
     ply_path = os.path.join(
         config.scene_dir, "artifacts", "point_cloud.ply"
@@ -83,13 +84,42 @@ async def lifespan(app: FastAPI):
     if os.path.exists(ply_path):
         try:
             gaussian_store.load_ply(ply_path)
+            _app_state["scene_source"] = "live"
             logger.info(
-                "PLY loaded: %d Gaussians", gaussian_store.count
+                "Using live scene from %s (%d Gaussians)",
+                config.scene_dir,
+                gaussian_store.count,
             )
         except Exception as exc:
             logger.warning("Failed to load PLY from %s: %s", ply_path, exc)
-    else:
-        logger.warning("PLY file not found: %s", ply_path)
+
+    # Fallback: try fallback_scene_dir if primary scene not loaded
+    if not gaussian_store.is_loaded:
+        fallback_ply = os.path.join(
+            config.fallback_scene_dir, "artifacts", "point_cloud.ply"
+        )
+        if os.path.exists(fallback_ply):
+            try:
+                gaussian_store.load_ply(fallback_ply)
+                _app_state["scene_source"] = "fallback"
+                logger.info(
+                    "Using fallback scene from %s (%d Gaussians)",
+                    config.fallback_scene_dir,
+                    gaussian_store.count,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Failed to load fallback PLY from %s: %s",
+                    fallback_ply,
+                    exc,
+                )
+        else:
+            logger.warning(
+                "No PLY found in primary (%s) or fallback (%s)",
+                ply_path,
+                fallback_ply,
+            )
+
     _app_state["gaussian_store"] = gaussian_store
 
     # --- Decode all Gaussians to 512-dim ---
@@ -134,6 +164,41 @@ async def lifespan(app: FastAPI):
             logger.warning("Failed to initialize Backboard: %s", exc)
     else:
         logger.info("BACKBOARD_API_KEY not set — memory service disabled")
+
+    # --- Auto-build scene graph ---
+    clip_encoder = _app_state["clip_encoder"]
+    if (
+        gaussian_store.is_loaded
+        and clip_encoder is not None
+        and gaussian_store.decoded_embeddings is not None
+    ):
+        try:
+            from server.services.graph_builder import build_scene_graph
+
+            scene_graph = build_scene_graph(
+                gaussian_store=gaussian_store,
+                clip_encoder=clip_encoder,
+                query="objects",
+                k=5000,
+                min_samples=6,
+                hierarchy_threshold=0.7,
+            )
+            _app_state["scene_graph"] = scene_graph
+            logger.info(
+                "Auto-built scene graph: %d nodes, %d edges",
+                len(scene_graph.get("nodes", [])),
+                len(scene_graph.get("edges", [])),
+            )
+        except Exception as exc:
+            logger.warning("Failed to auto-build scene graph: %s", exc)
+    else:
+        logger.info(
+            "Skipping auto scene graph build: "
+            "ply_loaded=%s, clip=%s, decoded=%s",
+            gaussian_store.is_loaded,
+            clip_encoder is not None,
+            gaussian_store.decoded_embeddings is not None,
+        )
 
     elapsed = time.time() - start_time
     logger.info(

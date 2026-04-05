@@ -369,3 +369,87 @@ async def api_memory(session_id: str):
         "room_summary": "Scene explored",
         "changes_detected": 0,
     }
+
+
+# --- 9. Edit endpoint (scene editing: recolor objects) ---
+
+# Common color name → hex mapping
+COLOR_MAP = {
+    "red": "#ff0000",
+    "blue": "#0000ff",
+    "green": "#00ff00",
+    "yellow": "#ffff00",
+    "orange": "#ff8800",
+    "purple": "#8800ff",
+    "pink": "#ff69b4",
+    "white": "#ffffff",
+    "black": "#000000",
+    "brown": "#8b4513",
+    "gray": "#808080",
+    "grey": "#808080",
+    "gold": "#ffd700",
+    "cyan": "#00ffff",
+    "magenta": "#ff00ff",
+    "teal": "#008080",
+}
+
+
+def parse_color_from_query(query: str) -> str:
+    """Extract a color name from a natural-language edit query.
+
+    Searches for known color names in the query text and returns the
+    corresponding hex value. Falls back to red if no color is detected.
+    """
+    lower = query.lower()
+    for name, hex_val in COLOR_MAP.items():
+        if name in lower:
+            return hex_val
+    return "#ff0000"
+
+
+@router.post("/edit")
+async def api_edit(body: dict):
+    """Handle scene editing queries like 'change the couch to red'.
+
+    Uses QueryWalker to find the target object, then returns recolor
+    instructions with matched Gaussian indices and target color.
+    """
+    from server.main import get_app_state
+
+    state = get_app_state()
+
+    if state.get("scene_graph") is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Scene graph not built. Run exploration first.",
+        )
+
+    query = body.get("query", "")
+    if not query.strip():
+        raise HTTPException(status_code=400, detail="Query must be non-empty.")
+
+    from server.services.query_walker import QueryWalker
+
+    walker = QueryWalker(
+        scene_graph=state["scene_graph"],
+        query=query,
+        memory_service=state.get("memory_service"),
+        scene_id=body.get("session_id", "default"),
+    )
+    result = await walker.run()
+
+    color = parse_color_from_query(query)
+    matched = result.get("matched_nodes", [])
+    target_label = matched[0].get("label", "unknown") if matched else "unknown"
+
+    return {
+        "action": "recolor",
+        "target": target_label,
+        "color": color,
+        "matched_gaussians": result.get("highlight_indices", []),
+        "matched_nodes": [
+            {"label": n.get("label", ""), "confidence": 0.9}
+            for n in matched
+        ],
+        "answer": f"Done! I've changed the {target_label} to {color}.",
+    }

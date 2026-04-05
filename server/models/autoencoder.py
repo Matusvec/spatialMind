@@ -5,9 +5,11 @@ and reconstructs them back to 512-dim (decoder). The decoder is used at query
 time to project per-Gaussian latent features into CLIP space for cosine
 similarity against text queries.
 
-Architecture (from LangSplat paper):
-- Encoder: 512 -> 256 -> 128 -> 64 -> 32 -> 3 (ReLU between all except last)
-- Decoder: 3 -> 16 -> 32 -> 64 -> 128 -> 256 -> 256 -> 512 (ReLU between all except last)
+Architecture (from actual autoencoder.pth state_dict):
+- Encoder: 512 -> 256 (BN) -> 128 (BN) -> 64 (BN) -> 32 (BN) -> 3
+  Uses Linear + BatchNorm1d + ReLU blocks
+- Decoder: 3 -> 16 -> 32 -> 64 -> 128 -> 256 -> 256 -> 512
+  Uses Linear + ReLU blocks (no BatchNorm)
 """
 
 import logging
@@ -26,27 +28,45 @@ class Autoencoder(nn.Module):
     def __init__(self):
         super().__init__()
 
-        # Encoder: 512 -> 256 -> 128 -> 64 -> 32 -> 3
-        encoder_dims = [512, 256, 128, 64, 32, 3]
-        encoder_layers = []
-        for i in range(len(encoder_dims) - 1):
-            encoder_layers.append(
-                nn.Linear(encoder_dims[i], encoder_dims[i + 1])
-            )
-            if i < len(encoder_dims) - 2:
-                encoder_layers.append(nn.ReLU())
-        self.encoder = nn.Sequential(*encoder_layers)
+        # Encoder: Linear + BatchNorm1d + ReLU blocks
+        # state_dict keys: encoder.0 (Linear 512->256), encoder.1 (BN 256),
+        #   encoder.3 (Linear 256->128), encoder.4 (BN 128),
+        #   encoder.6 (Linear 128->64), encoder.7 (BN 64),
+        #   encoder.9 (Linear 64->32), encoder.10 (BN 32),
+        #   encoder.12 (Linear 32->3)
+        self.encoder = nn.Sequential(
+            nn.Linear(512, 256),   # 0
+            nn.BatchNorm1d(256),   # 1
+            nn.ReLU(),             # 2
+            nn.Linear(256, 128),   # 3
+            nn.BatchNorm1d(128),   # 4
+            nn.ReLU(),             # 5
+            nn.Linear(128, 64),    # 6
+            nn.BatchNorm1d(64),    # 7
+            nn.ReLU(),             # 8
+            nn.Linear(64, 32),     # 9
+            nn.BatchNorm1d(32),    # 10
+            nn.ReLU(),             # 11
+            nn.Linear(32, 3),      # 12
+        )
 
-        # Decoder: 3 -> 16 -> 32 -> 64 -> 128 -> 256 -> 256 -> 512
-        decoder_dims = [3, 16, 32, 64, 128, 256, 256, 512]
-        decoder_layers = []
-        for i in range(len(decoder_dims) - 1):
-            decoder_layers.append(
-                nn.Linear(decoder_dims[i], decoder_dims[i + 1])
-            )
-            if i < len(decoder_dims) - 2:
-                decoder_layers.append(nn.ReLU())
-        self.decoder = nn.Sequential(*decoder_layers)
+        # Decoder: Linear + ReLU blocks (no BatchNorm)
+        # 3 -> 16 -> 32 -> 64 -> 128 -> 256 -> 256 -> 512
+        self.decoder = nn.Sequential(
+            nn.Linear(3, 16),      # 0
+            nn.ReLU(),             # 1
+            nn.Linear(16, 32),     # 2
+            nn.ReLU(),             # 3
+            nn.Linear(32, 64),     # 4
+            nn.ReLU(),             # 5
+            nn.Linear(64, 128),    # 6
+            nn.ReLU(),             # 7
+            nn.Linear(128, 256),   # 8
+            nn.ReLU(),             # 9
+            nn.Linear(256, 256),   # 10
+            nn.ReLU(),             # 11
+            nn.Linear(256, 512),   # 12
+        )
 
     def encode(self, x: torch.Tensor) -> torch.Tensor:
         """Compress 512-dim input to 3-dim latent."""
@@ -66,19 +86,12 @@ def load_autoencoder(
 ) -> Autoencoder:
     """Load autoencoder from file, supporting both full model and state_dict.
 
-    LangSplat's training may save the model as torch.save(model) (full object)
-    or as a state_dict. This function handles both patterns.
-
     Args:
         path: Path to autoencoder checkpoint file.
         device: Device to load the model onto.
 
     Returns:
         Loaded Autoencoder in eval mode.
-
-    Raises:
-        FileNotFoundError: If the checkpoint file does not exist.
-        RuntimeError: If the checkpoint cannot be loaded.
     """
     checkpoint_path = Path(path)
     if not checkpoint_path.exists():
@@ -98,7 +111,7 @@ def load_autoencoder(
     if isinstance(loaded, (dict, OrderedDict)):
         logger.info("Loaded autoencoder from state_dict")
         ae = Autoencoder()
-        ae.load_state_dict(loaded)
+        ae.load_state_dict(loaded, strict=True)
         ae.eval()
         ae.to(device)
         return ae

@@ -1,8 +1,4 @@
-"""Walker endpoints for scene graph traversal agents.
-
-Provides POST /walker/explore for autonomous scene cataloging via ExplorationWalker
-and POST /walker/query for natural language scene queries via QueryWalker.
-"""
+"""Walker endpoints for cached-instance graph exploration and dense querying."""
 
 import logging
 
@@ -10,7 +6,6 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from server.services.exploration_walker import ExplorationWalker
-from server.services.query_walker import QueryWalker
 
 logger = logging.getLogger(__name__)
 
@@ -40,21 +35,21 @@ class ExploreResponse(BaseModel):
 
 @router.post("/walker/explore", response_model=ExploreResponse)
 async def explore_scene(request: ExploreRequest):
-    """Explore the scene graph and generate an object catalog.
+    """Explore the cached instance graph and generate an object catalog.
 
-    Creates an ExplorationWalker that traverses all nodes, generates a
-    human-readable catalog with positions and relationships, and optionally
-    writes to Backboard memory. Result is cached; use force=true to re-explore.
+    Creates an ExplorationWalker that traverses all grounded instances,
+    generates a human-readable catalog with positions and relationships,
+    and optionally writes to Backboard memory.
     """
     from server.main import get_app_state
 
     state = get_app_state()
+    scene_graph = state.get("instance_graph") or state.get("scene_graph")
 
-    # Guard: scene graph must exist
-    if state.get("scene_graph") is None:
+    if scene_graph is None:
         raise HTTPException(
             status_code=503,
-            detail="Scene graph not built. Call POST /scene/build first.",
+            detail="No grounded instances exist yet. Query the scene first.",
         )
 
     # Return cached result if available and not forced
@@ -64,7 +59,7 @@ async def explore_scene(request: ExploreRequest):
 
     # Create and run walker
     walker = ExplorationWalker(
-        scene_graph=state["scene_graph"],
+        scene_graph=scene_graph,
         memory_service=state.get("memory_service"),
         scene_id=request.scene_id,
     )
@@ -109,38 +104,30 @@ class QueryResponse(BaseModel):
 
 @router.post("/walker/query", response_model=QueryResponse)
 async def query_scene(request: QueryRequest):
-    """Query the scene graph with natural language.
-
-    Creates a QueryWalker that traverses all nodes, finds relevant objects
-    by keyword matching, builds spatial context, and routes through Backboard
-    for LLM-powered natural language answers. Multi-turn context is maintained
-    via scene_id (same scene_id = same Backboard thread, BB-05).
-    """
+    """Ground a query directly against the dense feature field."""
     from server.main import get_app_state
+    from server.services.dense_query import ground_query
 
     state = get_app_state()
 
-    # Guard: scene graph must exist
-    if state.get("scene_graph") is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Scene graph not built. Call POST /scene/build first.",
-        )
-
-    # Guard: query must be non-empty
     if not request.query.strip():
         raise HTTPException(
             status_code=400,
             detail="Query must be non-empty.",
         )
 
-    # Create and run walker
-    walker = QueryWalker(
-        scene_graph=state["scene_graph"],
+    result = ground_query(text=request.query, state=state, persist_instances=True)
+    return QueryResponse(
+        answer=result.get("answer", ""),
         query=request.query,
-        memory_service=state.get("memory_service"),
+        matched_nodes=[
+            MatchedNode(
+                id=node.get("id", ""),
+                label=node.get("label", ""),
+                centroid=node.get("centroid", [0.0, 0.0, 0.0]),
+            )
+            for node in result.get("nodes", [])
+        ],
+        highlight_indices=result.get("highlight_indices", []),
         scene_id=request.scene_id,
     )
-    result = await walker.run()
-
-    return QueryResponse(**result)

@@ -1,7 +1,7 @@
 """Tests for the POST /scene/build endpoint.
 
-Integration tests verifying the scene build endpoint orchestrates graph
-building, caches results, and returns proper error codes.
+Integration tests verifying the endpoint materializes an instance graph from
+grounded instances and caches the result.
 """
 
 from unittest.mock import patch
@@ -84,8 +84,31 @@ def reset_app_state():
     state["gaussian_store"] = MockGaussianStore()
     state["clip_encoder"] = MockCLIPEncoder()
     state["scene_graph"] = None
+    state["instance_graph"] = None
+    state["instance_store"] = {
+        "instances": [
+            {
+                "id": "inst_000",
+                "label": "chair",
+                "aliases": ["chair"],
+                "alias_counts": {"chair": 1},
+                "source_queries": ["chair"],
+                "gaussian_indices": list(range(40)),
+                "centroid": [0.0, 0.0, 0.0],
+                "bbox": [-1.0, -1.0, -1.0, 1.0, 1.0, 1.0],
+                "radius": 0.5,
+                "confidence": 0.9,
+                "match_score": 0.9,
+                "semantic_level": 0,
+                "query_count": 1,
+            }
+        ],
+        "next_id": 1,
+        "query_history": ["chair"],
+    }
     yield
     state["scene_graph"] = None
+    state["instance_graph"] = None
 
 
 @pytest_asyncio.fixture
@@ -112,13 +135,13 @@ async def test_scene_build_returns_200_with_required_keys(client):
 
 @pytest.mark.asyncio
 async def test_scene_build_custom_query_and_k(client):
-    """POST /scene/build with custom query and k parameters uses those values."""
+    """POST /scene/build keeps metadata from request even though instances are cached."""
     resp = await client.post("/scene/build", json={"query": "chairs", "k": 50})
     assert resp.status_code == 200
     data = resp.json()
     assert data["metadata"]["query"] == "chairs"
     assert data["metadata"]["k"] == 50
-    assert data["metadata"]["selected_count"] <= 50
+    assert data["metadata"]["selected_count"] > 0
 
 
 @pytest.mark.asyncio
@@ -126,15 +149,6 @@ async def test_scene_build_503_when_store_not_loaded(client):
     """POST /scene/build returns 503 when gaussian_store is not loaded."""
     state = get_app_state()
     state["gaussian_store"] = UnloadedGaussianStore()
-    resp = await client.post("/scene/build", json={})
-    assert resp.status_code == 503
-
-
-@pytest.mark.asyncio
-async def test_scene_build_503_when_clip_not_initialized(client):
-    """POST /scene/build returns 503 when clip_encoder is not initialized."""
-    state = get_app_state()
-    state["clip_encoder"] = None
     resp = await client.post("/scene/build", json={})
     assert resp.status_code == 503
 
@@ -151,21 +165,21 @@ async def test_metadata_cluster_count_matches_nodes(client):
 async def test_scene_graph_cached_in_app_state(client):
     """Scene graph result is cached in app_state after first build."""
     state = get_app_state()
-    assert state["scene_graph"] is None
+    assert state["instance_graph"] is None
     resp = await client.post("/scene/build", json={})
     assert resp.status_code == 200
+    assert state["instance_graph"] is not None
     assert state["scene_graph"] is not None
 
 
 @pytest.mark.asyncio
 async def test_cached_result_returned_without_rebuild(client):
-    """Second POST with force=false returns cached result (no re-clustering)."""
+    """Second POST with force=false returns cached result."""
     # First build
     resp1 = await client.post("/scene/build", json={})
     data1 = resp1.json()
 
-    # Patch build_scene_graph to track if it's called again
-    with patch("server.routers.scene.build_scene_graph") as mock_build:
+    with patch("server.services.instance_cache.build_instance_graph") as mock_build:
         resp2 = await client.post("/scene/build", json={"force": False})
         data2 = resp2.json()
         mock_build.assert_not_called()
@@ -180,10 +194,10 @@ async def test_force_true_rebuilds(client):
     await client.post("/scene/build", json={})
 
     state = get_app_state()
-    assert state["scene_graph"] is not None
+    assert state["instance_graph"] is not None
 
     # Force rebuild
-    with patch("server.routers.scene.build_scene_graph") as mock_build:
+    with patch("server.services.instance_cache.build_instance_graph") as mock_build:
         mock_build.return_value = {
             "nodes": [], "edges": [], "hierarchy": [],
             "metadata": {

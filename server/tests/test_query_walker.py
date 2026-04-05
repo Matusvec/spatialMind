@@ -4,6 +4,7 @@ Tests keyword matching, spatial context building, Backboard LLM routing,
 fallback without Backboard, highlight indices, and multi-turn context.
 """
 
+import numpy as np
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
@@ -96,6 +97,16 @@ def test_query_walker_marks_relevant_node():
     assert "table" in matched_labels
     assert "chair" not in matched_labels
     assert "lamp" not in matched_labels
+
+
+def test_query_walker_normalizes_punctuation_and_plurals():
+    """Queries like 'tables?' should still match a singular node label."""
+    graph = _build_test_graph()
+    walker = QueryWalker(scene_graph=graph, query="tables?")
+    walker.traverse_all()
+
+    matched_labels = [n["label"] for n in walker.matched_nodes]
+    assert matched_labels == ["table"]
 
 
 # --- Test 2: Spatial context for relevant nodes ---
@@ -241,3 +252,59 @@ async def test_no_matches_returns_empty():
     assert len(result["matched_nodes"]) == 0
     assert len(result["highlight_indices"]) == 0
     assert "No objects matching" in result["answer"]
+
+
+class _MockClipEncoder:
+    def encode_text(self, text: str) -> np.ndarray:
+        if text == "seat":
+            return np.array([1.0, 0.0, 0.0], dtype=np.float32)
+        return np.array([0.0, 1.0, 0.0], dtype=np.float32)
+
+
+class _MockGaussianStore:
+    def __init__(self):
+        self.decoded_embeddings = np.array(
+            [
+                [1.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0],
+            ],
+            dtype=np.float32,
+        )
+
+
+def test_query_walker_uses_semantic_matching_when_lexical_fails():
+    """Semantic similarity should recover obvious object matches."""
+    graph = {
+        "nodes": [
+            {
+                "id": "obj_000",
+                "label": "armchair",
+                "centroid": [0.0, 0.0, 0.0],
+                "bbox": [0.0, 0.0, 0.0, 1.0, 1.0, 1.0],
+                "gaussian_indices": [0, 1],
+                "confidence": 0.9,
+            },
+            {
+                "id": "obj_001",
+                "label": "window",
+                "centroid": [1.0, 0.0, 0.0],
+                "bbox": [1.0, 0.0, 0.0, 2.0, 1.0, 1.0],
+                "gaussian_indices": [2],
+                "confidence": 0.8,
+            },
+        ],
+        "edges": [],
+    }
+
+    walker = QueryWalker(
+        scene_graph=graph,
+        query="seat",
+        clip_encoder=_MockClipEncoder(),
+        gaussian_store=_MockGaussianStore(),
+        semantic_threshold=0.2,
+    )
+    walker.traverse_all()
+
+    matched_labels = [n["label"] for n in walker.matched_nodes]
+    assert matched_labels == ["armchair"]

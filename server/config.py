@@ -15,10 +15,13 @@ class Settings(BaseSettings):
     scene_dir: str = "./data/scene"
     host: str = "0.0.0.0"
     port: int = 8001
-    clip_model: str = "ViT-B-16"
-    clip_pretrained: str = "laion2b_s34b_b88k"
+    clip_model: str = "ViT-B-32"
+    clip_pretrained: str = "openai"
     default_top_k: int = 100
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
     fallback_scene_dir: str = "./data/fallback_scene"
     backboard_api_key: str = ""
     openai_api_key: str = ""
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.5-flash"
+    gemini_api_base: str = "https://generativelanguage.googleapis.com"

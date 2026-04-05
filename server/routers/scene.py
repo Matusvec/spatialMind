@@ -1,16 +1,14 @@
-"""Scene graph build endpoint.
+"""Instance-graph build endpoint.
 
-Triggers scene graph construction by orchestrating DBSCAN clustering,
-spatial relationship extraction, and hierarchy computation. The result
-is cached in app_state so it's built once at scene load, not per-query.
+Materializes a lightweight scene graph from grounded query instances.
+Dense query-time grounding is primary; this endpoint only lifts the
+cached instances into graph form.
 """
 
 import logging
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-
-from server.services.graph_builder import build_scene_graph
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +21,7 @@ router = APIRouter()
 class SceneBuildRequest(BaseModel):
     """Request body for POST /scene/build."""
 
-    query: str = "objects"
+    query: str = "instances"
     k: int = 5000
     min_samples: int = 6
     hierarchy_threshold: float = 0.7
@@ -65,7 +63,7 @@ class SceneHierarchyResponse(BaseModel):
 
 
 class SceneMetadataResponse(BaseModel):
-    """Metadata about the scene graph build."""
+    """Metadata about the instance graph build."""
 
     gaussian_count: int
     selected_count: int
@@ -90,46 +88,36 @@ class SceneBuildResponse(BaseModel):
 
 @router.post("/scene/build", response_model=SceneBuildResponse)
 async def build_scene(request: SceneBuildRequest):
-    """Build the scene graph from loaded Gaussian data.
-
-    Orchestrates CLIP selection, DBSCAN clustering, spatial relations,
-    and hierarchy computation. Result is cached in app_state; subsequent
-    calls return the cached result unless force=true.
-    """
+    """Build the instance graph from cached grounded instances."""
     from server.main import get_app_state
+    from server.services.instance_cache import build_instance_graph, ensure_instance_store
 
     state = get_app_state()
 
-    # Guard: Gaussian store must be loaded
     if not state.get("gaussian_store") or not state["gaussian_store"].is_loaded:
         raise HTTPException(
             status_code=503,
             detail="Gaussian store not loaded. Check /health for status.",
         )
 
-    # Guard: CLIP encoder must be initialized
-    if not state.get("clip_encoder"):
-        raise HTTPException(
-            status_code=503,
-            detail="CLIP encoder not initialized. Check /health for status.",
-        )
+    if not request.force and state.get("instance_graph") is not None:
+        logger.info("Returning cached instance graph")
+        return state["instance_graph"]
 
-    # Return cached result if available and not forced
-    if not request.force and state.get("scene_graph") is not None:
-        logger.info("Returning cached scene graph")
-        return state["scene_graph"]
-
-    # Build scene graph
-    result = build_scene_graph(
-        gaussian_store=state["gaussian_store"],
-        clip_encoder=state["clip_encoder"],
-        query=request.query,
-        k=request.k,
-        min_samples=request.min_samples,
-        hierarchy_threshold=request.hierarchy_threshold,
+    store = ensure_instance_store(state)
+    graph = build_instance_graph(store, state["gaussian_store"])
+    metadata = graph.setdefault("metadata", {})
+    metadata.update(
+        {
+            "gaussian_count": int(state["gaussian_store"].count),
+            "selected_count": sum(len(node.get("gaussian_indices", [])) for node in graph.get("nodes", [])),
+            "cluster_count": len(graph.get("nodes", [])),
+            "edge_count": len(graph.get("edges", [])),
+            "hierarchy_count": len(graph.get("hierarchy", [])),
+            "query": request.query,
+            "k": request.k,
+        }
     )
-
-    # Cache result
-    state["scene_graph"] = result
-
-    return result
+    state["instance_graph"] = graph
+    state["scene_graph"] = graph
+    return graph

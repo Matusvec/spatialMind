@@ -38,8 +38,11 @@ class CLIPEncoder:
             device,
         )
         self.device = device
+        # force_quick_gelu=True is required for openai-pretrained models (ViT-B-16/openai,
+        # ViT-B-32/openai) to avoid a QuickGELU activation mismatch that would produce
+        # subtly wrong text embeddings. Harmless for laion2b-pretrained models.
         self.model, _, _ = open_clip.create_model_and_transforms(
-            model_name, pretrained=pretrained
+            model_name, pretrained=pretrained, force_quick_gelu=True
         )
         self.tokenizer = open_clip.get_tokenizer(model_name)
         self.model.eval().to(device)

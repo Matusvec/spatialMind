@@ -14,14 +14,14 @@ async def health_check():
     gaussian_store = state["gaussian_store"]
     ply_loaded = gaussian_store.is_loaded if gaussian_store else False
     clip_ready = state["clip_encoder"] is not None
-    scene_graph = state.get("scene_graph")
-    scene_graph_ready = scene_graph is not None
-    scene_graph_nodes = (
-        len(scene_graph["nodes"])
-        if scene_graph and isinstance(scene_graph, dict) and "nodes" in scene_graph
+    instance_graph = state.get("instance_graph")
+    instance_graph_nodes = (
+        len(instance_graph["nodes"])
+        if instance_graph and isinstance(instance_graph, dict) and "nodes" in instance_graph
         else 0
     )
-    pipeline_ready = bool(ply_loaded and clip_ready and scene_graph_ready)
+    instance_graph_ready = instance_graph_nodes > 0
+    pipeline_ready = bool(ply_loaded and clip_ready)
 
     return {
         "status": "ok",
@@ -34,8 +34,10 @@ async def health_check():
         ),
         "clip_model": state["config"].clip_model,
         "clip_ready": clip_ready,
-        "scene_graph_ready": scene_graph_ready,
-        "scene_graph_nodes": scene_graph_nodes,
+        "scene_graph_ready": instance_graph_ready,
+        "scene_graph_nodes": instance_graph_nodes,
+        "instance_graph_ready": instance_graph_ready,
+        "instance_graph_nodes": instance_graph_nodes,
         "pipeline_ready": pipeline_ready,
         "scene_source": state.get("scene_source", "none"),
     }

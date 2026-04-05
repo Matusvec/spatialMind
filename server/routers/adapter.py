@@ -9,6 +9,7 @@ import asyncio
 import glob
 import logging
 import os
+import uuid
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
@@ -19,6 +20,113 @@ router = APIRouter(prefix="/api")
 
 # --- Module-level exploration state ---
 _explore_state: dict = {"status": "idle", "result": None, "scene_graph": None}
+_query_jobs: dict[str, dict] = {}
+
+QUERY_STEP_ORDER = [
+    ("normalize_query", "Normalize query"),
+    ("encode_query", "Encode text with CLIP"),
+    ("score_semantics", "Score sem2"),
+    ("cluster_regions", "Group grounded splats in 3D"),
+    ("materialize_instances", "Materialize reusable instances"),
+    ("build_graph", "Build instance graph"),
+    ("prepare_response", "Prepare highlights and response"),
+]
+
+
+def _init_query_steps() -> list[dict]:
+    return [
+        {"key": key, "label": label, "status": "pending", "detail": None}
+        for key, label in QUERY_STEP_ORDER
+    ]
+
+
+def _using_agent(state: dict) -> bool:
+    from server.services.gemini_agent import gemini_enabled
+
+    return gemini_enabled(state)
+
+
+def _set_query_step(job: dict, key: str, status: str, detail: str | None = None) -> None:
+    for step in job["steps"]:
+        if step["key"] == key:
+            step["status"] = status
+            if detail is not None:
+                step["detail"] = detail
+            break
+
+
+async def _run_query_job(job_id: str, body: dict) -> None:
+    from server.main import get_app_state
+    from server.services.dense_query import ground_query
+    from server.services.gemini_agent import GeminiSceneAgent, format_dense_payload
+
+    state = get_app_state()
+    job = _query_jobs[job_id]
+    query = body.get("query", "")
+    mode = body.get("mode", "query")
+
+    def progress_cb(step_key: str, status: str, detail: str | None = None) -> None:
+        _set_query_step(job, step_key, status, detail)
+
+    try:
+        if _using_agent(state):
+            try:
+                agent = GeminiSceneAgent(state=state, progress_cb=progress_cb)
+                payload = await asyncio.to_thread(agent.run, query=query, mode=mode)
+            except Exception as exc:
+                logger.exception("Gemini agent failed; falling back to dense query: %s", exc)
+                result = await asyncio.to_thread(
+                    ground_query,
+                    text=query,
+                    state=state,
+                    persist_instances=True,
+                    progress_cb=progress_cb,
+                )
+                payload = format_dense_payload(
+                    result,
+                    mode=mode,
+                    query=query,
+                    answer=result.get("answer", ""),
+                )
+                payload["agent_fallback"] = True
+        else:
+            result = await asyncio.to_thread(
+                ground_query,
+                text=query,
+                state=state,
+                persist_instances=True,
+                progress_cb=progress_cb,
+            )
+            payload = format_dense_payload(
+                result,
+                mode=mode,
+                query=query,
+                answer=result.get("answer", ""),
+            )
+            if mode == "edit":
+                color = parse_color_from_query(query)
+                matched = result.get("nodes", [])
+                target_label = matched[0].get("label", "unknown") if matched else "unknown"
+                payload.update(
+                    {
+                        "action": "recolor",
+                        "target": target_label,
+                        "color": color,
+                        "matched_gaussians": result.get("highlight_indices", []),
+                        "matched_nodes": [
+                            {"label": n.get("label", ""), "confidence": 0.9}
+                            for n in matched
+                        ],
+                        "answer": f"Done! I've changed the {target_label} to {color}.",
+                        "description": f"Done! I've changed the {target_label} to {color}.",
+                    }
+                )
+        job["result"] = payload
+        job["status"] = "complete"
+    except Exception as exc:
+        logger.exception("Query job failed: %s", exc)
+        job["status"] = "error"
+        job["error"] = str(exc)
 
 # --- Category heuristic ---
 CATEGORY_MAP = {
@@ -82,6 +190,47 @@ def _edges_to_graph_edges(edges: list[dict]) -> list[dict]:
     ]
 
 
+def _build_highlight_regions(
+    matched_nodes: list[dict],
+    positions,
+    *,
+    max_regions: int = 8,
+) -> list[dict]:
+    """Build tight spherical highlight regions directly from matched nodes."""
+    import numpy as np
+
+    if positions is None:
+        return []
+
+    regions = []
+    for node in matched_nodes:
+        indices = np.asarray(node.get("gaussian_indices", []), dtype=np.int64)
+        if len(indices) == 0:
+            continue
+
+        valid = indices[(indices >= 0) & (indices < len(positions))]
+        if len(valid) == 0:
+            continue
+
+        cluster_pos = positions[valid]
+        centroid = cluster_pos.mean(axis=0)
+        dists = np.linalg.norm(cluster_pos - centroid, axis=1)
+        radius = float(np.percentile(dists, 75)) + 0.05 if len(dists) > 0 else 0.15
+        regions.append(
+            {
+                "node_id": node.get("id", ""),
+                "label": node.get("label", "Unknown"),
+                "centroid": centroid.tolist(),
+                "radius": max(0.08, min(radius, 0.6)),
+                "count": int(len(valid)),
+                "mean_score": float(node.get("match_score", node.get("confidence", 0.0))),
+            }
+        )
+
+    regions.sort(key=lambda r: -r["mean_score"])
+    return regions[:max_regions]
+
+
 # --- 1. Health endpoint ---
 
 
@@ -92,17 +241,28 @@ async def api_health():
 
     state = get_app_state()
     gaussian_store = state.get("gaussian_store")
+    clip_encoder = state.get("clip_encoder")
+    instance_graph = state.get("instance_graph")
+    ply_loaded = gaussian_store.is_loaded if gaussian_store else False
+    clip_ready = clip_encoder is not None
+    graph_nodes = len(instance_graph.get("nodes", [])) if isinstance(instance_graph, dict) else 0
+    graph_ready = graph_nodes > 0
+    pipeline_ready = ply_loaded and clip_ready
+    agent_ready = _using_agent(state)
     return {
         "status": "ok",
-        "ply_loaded": (
-            gaussian_store.is_loaded if gaussian_store else False
-        ),
+        "ply_loaded": ply_loaded,
         "autoencoder_initialized": state.get("autoencoder") is not None,
-        "gaussian_count": (
-            gaussian_store.count
-            if gaussian_store and gaussian_store.is_loaded
-            else 0
-        ),
+        "gaussian_count": gaussian_store.count if gaussian_store and ply_loaded else 0,
+        "clip_ready": clip_ready,
+        "scene_graph_ready": graph_ready,
+        "scene_graph_nodes": graph_nodes,
+        "instance_graph_ready": graph_ready,
+        "instance_graph_nodes": graph_nodes,
+        "pipeline_ready": pipeline_ready,
+        "agent_ready": agent_ready,
+        "agent_provider": "gemini" if agent_ready else None,
+        "scene_source": state.get("scene_source", "none"),
     }
 
 
@@ -110,43 +270,26 @@ async def api_health():
 
 
 async def _run_exploration(scene_id: str = "default") -> None:
-    """Background task: build scene graph then run exploration walker."""
+    """Background task: catalog the currently grounded instance graph."""
     from server.main import get_app_state
 
     state = get_app_state()
 
     try:
-        # Step 1: Build scene graph if not already built
-        if state.get("scene_graph") is None:
-            logger.info("Adapter: building scene graph before exploration")
-            try:
-                from server.services.graph_builder import build_scene_graph
+        instance_graph = state.get("instance_graph") or {
+            "nodes": [],
+            "edges": [],
+            "hierarchy": [],
+            "metadata": {"node_count": 0, "edge_count": 0, "hierarchy_count": 0, "source": "instance-cache"},
+        }
+        _explore_state["scene_graph"] = instance_graph
+        _explore_state["status"] = "exploring"
 
-                result = build_scene_graph(
-                    gaussian_store=state["gaussian_store"],
-                    clip_encoder=state["clip_encoder"],
-                    query="objects",
-                    k=5000,
-                    min_samples=6,
-                    hierarchy_threshold=0.7,
-                )
-                state["scene_graph"] = result
-                # Make scene graph available for polling
-                _explore_state["scene_graph"] = result
-                _explore_state["status"] = "exploring"
-                logger.info("Adapter: scene graph built")
-            except Exception as exc:
-                logger.error("Adapter: scene graph build failed: %s", exc)
-                _explore_state["status"] = "complete"
-                _explore_state["result"] = None
-                return
-
-        # Step 2: Run exploration walker
         logger.info("Adapter: starting exploration walker")
         from server.services.exploration_walker import ExplorationWalker
 
         walker = ExplorationWalker(
-            scene_graph=state["scene_graph"],
+            scene_graph=instance_graph,
             memory_service=state.get("memory_service"),
             scene_id=scene_id,
         )
@@ -181,7 +324,7 @@ async def api_explore_status():
     from server.main import get_app_state
 
     state = get_app_state()
-    scene_graph = _explore_state.get("scene_graph") or state.get("scene_graph")
+    scene_graph = _explore_state.get("scene_graph") or state.get("instance_graph")
 
     # Default empty response
     objects: list[dict] = []
@@ -216,7 +359,8 @@ async def api_explore_status():
 
     status = _explore_state["status"]
     if status == "idle":
-        status = "exploring"
+        status = "complete"
+        progress = 1.0 if scene_graph is not None else 0.0
 
     return {
         "status": status,
@@ -229,49 +373,77 @@ async def api_explore_status():
 # --- 4. Query endpoint ---
 
 
-@router.post("/query")
-async def api_query(body: dict):
-    """Accept a chat query and shape the walker response for the frontend."""
+@router.post("/query/start")
+async def api_query_start(body: dict):
+    """Start a query job and return a polling handle for real progress updates."""
     from server.main import get_app_state
+    from server.services.gemini_agent import init_agent_steps
 
     state = get_app_state()
     query = body.get("query", "")
-    session_id = body.get("session_id", "default")
+    if not query.strip():
+        raise HTTPException(status_code=400, detail="Query must be non-empty.")
+
+    steps = init_agent_steps() if _using_agent(state) else _init_query_steps()
+    job_id = uuid.uuid4().hex
+    _query_jobs[job_id] = {
+        "id": job_id,
+        "status": "running",
+        "query": query,
+        "mode": body.get("mode", "query"),
+        "steps": steps,
+        "result": None,
+        "error": None,
+    }
+    asyncio.create_task(_run_query_job(job_id, body))
+    return {"job_id": job_id, "status": "running", "steps": _query_jobs[job_id]["steps"]}
+
+
+@router.get("/query/status/{job_id}")
+async def api_query_status(job_id: str):
+    """Poll a running query job for real stage progress and final result."""
+    job = _query_jobs.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Query job not found.")
+    return {
+        "job_id": job_id,
+        "status": job["status"],
+        "query": job["query"],
+        "mode": job["mode"],
+        "steps": job["steps"],
+        "result": job["result"],
+        "error": job["error"],
+    }
+
+
+@router.post("/query")
+async def api_query(body: dict):
+    """Ground a chat query directly against the dense 3D semantic field."""
+    from server.main import get_app_state
+    from server.services.dense_query import ground_query
+    from server.services.gemini_agent import GeminiSceneAgent, format_dense_payload
+
+    state = get_app_state()
+    query = body.get("query", "")
+    mode = body.get("mode", "query")
 
     if not query.strip():
         raise HTTPException(status_code=400, detail="Query must be non-empty.")
 
-    if state.get("scene_graph") is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Scene graph not built. Run exploration first.",
-        )
+    if _using_agent(state):
+        try:
+            agent = GeminiSceneAgent(state=state)
+            return await asyncio.to_thread(agent.run, query=query, mode=mode)
+        except Exception as exc:
+            logger.exception("Gemini agent failed on direct query; falling back: %s", exc)
 
-    from server.services.query_walker import QueryWalker
-
-    walker = QueryWalker(
-        scene_graph=state["scene_graph"],
+    result = ground_query(text=query, state=state, persist_instances=True)
+    return format_dense_payload(
+        result,
+        mode=mode,
         query=query,
-        memory_service=state.get("memory_service"),
-        scene_id=session_id,
+        answer=result.get("answer", ""),
     )
-    result = await walker.run()
-
-    matched = result.get("matched_nodes", [])
-    labels = [n.get("label", "") for n in matched]
-
-    return {
-        "description": result.get("answer", ""),
-        "answer": result.get("answer", ""),
-        "nodes": [
-            {"label": n.get("label", ""), "confidence": 0.9}
-            for n in matched
-        ],
-        "reasoning": (
-            f"QueryWalker traversed {len(matched)} nodes, "
-            f"matched: {', '.join(labels) if labels else 'none'}"
-        ),
-    }
 
 
 # --- 5. Scenes list ---
@@ -292,6 +464,12 @@ async def api_scenes():
 
 
 # --- 6. Splat file serving ---
+
+
+@router.get("/scene/scene.ply")
+async def api_scene_ply_ext():
+    """Serve the scene PLY with .ply extension in URL for Spark.js format detection."""
+    return await api_scene_splat()
 
 
 @router.get("/scene/splat")
@@ -330,41 +508,56 @@ async def api_scene_splat():
 
 @router.post("/clip/highlight")
 async def api_clip_highlight(body: dict):
-    """Proxy to /clip/highlight for Spark.js semantic highlighting."""
+    """Return exact grounded highlight regions for a text query."""
     from server.main import get_app_state
+    from server.services.dense_query import ground_query
 
     state = get_app_state()
     gaussian_store = state.get("gaussian_store")
     clip_encoder = state.get("clip_encoder")
 
-    if not gaussian_store or not clip_encoder or gaussian_store.decoded_embeddings is None:
+    if not gaussian_store or not clip_encoder:
         raise HTTPException(status_code=503, detail="CLIP pipeline not ready.")
 
-    from server.services.similarity import top_k, highlight_mask
+    text = body.get("text", "")
+    result = ground_query(text=text, state=state, persist_instances=True)
 
-    text_embedding = clip_encoder.encode_text(body.get("text", ""))
-    indices, scores = top_k(text_embedding, gaussian_store.decoded_embeddings, k=body.get("k", 100))
-    mask = highlight_mask(scores, indices, gaussian_store.count)
-    return {"mask": mask.tolist(), "indices": indices.tolist(), "scores": scores.tolist()}
+    return {
+        "regions": result.get("highlight_regions", []),
+        "indices": result.get("highlight_match", {}).get("indices", []),
+        "scores": result.get("highlight_match", {}).get("scores", []),
+        "total_matched": len(result.get("highlight_indices", [])),
+        "cluster_count": len(result.get("highlight_regions", [])),
+        "level": 2,
+        "level_name": "sem2",
+        "query": text,
+        "threshold": result.get("highlight_match", {}).get("used_threshold"),
+        "semantic_fallback": result.get("semantic_fallback", False),
+    }
 
 
 @router.post("/clip/probability")
 async def api_clip_probability(body: dict):
-    """Proxy to /clip/probability for probability cloud heatmap."""
+    """Probability cloud heatmap with multi-level support."""
     from server.main import get_app_state
 
     state = get_app_state()
     gaussian_store = state.get("gaussian_store")
     clip_encoder = state.get("clip_encoder")
 
-    if not gaussian_store or not clip_encoder or gaussian_store.decoded_embeddings is None:
+    if not gaussian_store or not clip_encoder:
         raise HTTPException(status_code=503, detail="CLIP pipeline not ready.")
+
+    level = body.get("level", 0)
+    embeddings = gaussian_store.get_embeddings(level)
+    if embeddings is None:
+        raise HTTPException(status_code=503, detail=f"Semantic level {level} not loaded.")
 
     from server.services.similarity import probability_cloud
 
     text_embedding = clip_encoder.encode_text(body.get("text", ""))
-    scores = probability_cloud(text_embedding, gaussian_store.decoded_embeddings, temperature=body.get("temperature", 0.07))
-    return {"scores": scores.tolist()}
+    scores = probability_cloud(text_embedding, embeddings, temperature=body.get("temperature", 0.07))
+    return {"scores": scores.tolist(), "level": level}
 
 
 # --- 8. Memory stub ---
@@ -419,35 +612,21 @@ def parse_color_from_query(query: str) -> str:
 async def api_edit(body: dict):
     """Handle scene editing queries like 'change the couch to red'.
 
-    Uses QueryWalker to find the target object, then returns recolor
+    Uses dense query grounding to find the target object, then returns recolor
     instructions with matched Gaussian indices and target color.
     """
     from server.main import get_app_state
+    from server.services.dense_query import ground_query
 
     state = get_app_state()
-
-    if state.get("scene_graph") is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Scene graph not built. Run exploration first.",
-        )
 
     query = body.get("query", "")
     if not query.strip():
         raise HTTPException(status_code=400, detail="Query must be non-empty.")
-
-    from server.services.query_walker import QueryWalker
-
-    walker = QueryWalker(
-        scene_graph=state["scene_graph"],
-        query=query,
-        memory_service=state.get("memory_service"),
-        scene_id=body.get("session_id", "default"),
-    )
-    result = await walker.run()
+    result = ground_query(text=query, state=state, persist_instances=True)
 
     color = parse_color_from_query(query)
-    matched = result.get("matched_nodes", [])
+    matched = result.get("nodes", [])
     target_label = matched[0].get("label", "unknown") if matched else "unknown"
 
     return {
@@ -459,5 +638,7 @@ async def api_edit(body: dict):
             {"label": n.get("label", ""), "confidence": 0.9}
             for n in matched
         ],
+        "highlight_regions": result.get("highlight_regions", []),
+        "highlight_match": result.get("highlight_match", {"indices": [], "scores": [], "level": 2}),
         "answer": f"Done! I've changed the {target_label} to {color}.",
     }

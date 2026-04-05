@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from server.config import Settings
 from server.models.autoencoder import load_autoencoder
-from server.routers import clip, health, scene, walker
+from server.routers import adapter, clip, health, scene, walker
 from server.services.clip_encoder import CLIPEncoder
 from server.services.gaussian_store import GaussianStore
 
@@ -175,6 +175,7 @@ app.include_router(health.router)
 app.include_router(clip.router)
 app.include_router(scene.router)
 app.include_router(walker.router)
+app.include_router(adapter.router)
 
 
 if __name__ == "__main__":

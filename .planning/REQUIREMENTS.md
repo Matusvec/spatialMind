@@ -59,8 +59,8 @@ Requirements for hackathon demo. Each maps to roadmap phases.
 ### Demo
 
 - [ ] **DEMO-01**: Three-beat demo sequence works live — basic object detection ("chairs" light up) → spatial reasoning ("what's on the tables") → unrehearsed query proving real understanding
-- [ ] **DEMO-02**: Demo uses live-trained JacHacks venue scene (with fallback to pre-trained scene if training fails)
-- [ ] **DEMO-03**: Full pipeline runs end-to-end: query → CLIP → similarity → highlight + graph traversal → natural language answer
+- [x] **DEMO-02**: Demo uses live-trained JacHacks venue scene (with fallback to pre-trained scene if training fails)
+- [x] **DEMO-03**: Full pipeline runs end-to-end: query → CLIP → similarity → highlight + graph traversal → natural language answer
 
 ## v2 Requirements
 
@@ -135,8 +135,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INS-03 | Phase 5 | Complete |
 | INS-04 | Phase 5 | Complete |
 | DEMO-01 | Phase 6 | Pending |
-| DEMO-02 | Phase 6 | Pending |
-| DEMO-03 | Phase 6 | Pending |
+| DEMO-02 | Phase 6 | Complete |
+| DEMO-03 | Phase 6 | Complete |
 
 **Coverage:**
 - v1 requirements: 34 total

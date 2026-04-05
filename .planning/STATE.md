@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 05-03-PLAN.md
-last_updated: "2026-04-05T01:17:29.983Z"
+status: executing
+stopped_at: Completed 06-01-PLAN.md
+last_updated: "2026-04-05T01:31:02.075Z"
 last_activity: 2026-04-05
 progress:
   total_phases: 6
   completed_phases: 5
-  total_plans: 12
-  completed_plans: 12
+  total_plans: 14
+  completed_plans: 13
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-04)
 
 **Core value:** An AI that understands 3D space as a structured graph, queryable with natural language, powered by semantically-embedded Gaussians — giving physical spaces a mind.
-**Current focus:** Phase 05 — frontend-insforge
+**Current focus:** Phase 06 — demo-integration
 
 ## Current Position
 
-Phase: 6
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 06 (demo-integration) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-04-05
 
 Progress: [░░░░░░░░░░] 0%
@@ -63,6 +63,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 05-01 P01 | 2min | 2 tasks | 2 files |
 | Phase 05 P02 | 5min | 2 tasks | 4 files |
 | Phase 05-frontend-insforge P03 | 4min | 2 tasks | 4 files |
+| Phase 06-demo-integration P01 | 3min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -96,6 +97,8 @@ Recent decisions affecting current work:
 - [Phase 05]: Batch Dyno API calls (10K/frame) for per-Gaussian highlighting -- prevents main thread blocking
 - [Phase 05-frontend-insforge]: onSceneReady callback to share Three.js scene between SparkRenderer and GraphOverlay3D
 - [Phase 05-frontend-insforge]: GraphOverlay3D as null-rendering component injecting into shared Three.js scene graph
+- [Phase 06-demo-integration]: Scene source tracked as app_state field (live/fallback/none) for health endpoint
+- [Phase 06-demo-integration]: Auto scene-graph build uses try/except — server starts even if graph build fails
 
 ### Pending Todos
 
@@ -111,6 +114,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-05T01:12:07.589Z
-Stopped at: Completed 05-03-PLAN.md
+Last session: 2026-04-05T01:31:02.072Z
+Stopped at: Completed 06-01-PLAN.md
 Resume file: None

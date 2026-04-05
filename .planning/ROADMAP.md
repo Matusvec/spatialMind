@@ -110,7 +110,7 @@ Plans:
   4. Full pipeline runs on live-trained JacHacks venue PLY, with automatic fallback to pre-trained scene if the live scene is unavailable
 **Plans:** 2 plans
 Plans:
-- [ ] 06-01-PLAN.md — Demo launcher with scene fallback, auto scene-graph build, and pipeline readiness endpoint
+- [x] 06-01-PLAN.md — Demo launcher with scene fallback, auto scene-graph build, and pipeline readiness endpoint
 - [ ] 06-02-PLAN.md — E2E demo validation script and human visual verification checkpoint
 
 ## Progress

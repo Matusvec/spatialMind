@@ -108,7 +108,10 @@ Plans:
   2. Beat 2: typing "what's on the tables?" returns a correct natural language answer listing real objects visible in the scene
   3. Beat 3: an unrehearsed, novel query (chosen during demo) returns a spatially correct response — demonstrating real scene understanding not memorized outputs
   4. Full pipeline runs on live-trained JacHacks venue PLY, with automatic fallback to pre-trained scene if the live scene is unavailable
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 06-01-PLAN.md — Demo launcher with scene fallback, auto scene-graph build, and pipeline readiness endpoint
+- [ ] 06-02-PLAN.md — E2E demo validation script and human visual verification checkpoint
 
 ## Progress
 
@@ -122,4 +125,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. Clustering + JAC Graph | 0/2 | Planning complete | - |
 | 4. Agent Walkers + Backboard | 0/3 | Planning complete | - |
 | 5. Frontend + InsForge | 0/3 | Planning complete | - |
-| 6. Demo Integration | 0/TBD | Not started | - |
+| 6. Demo Integration | 0/2 | Planning complete | - |

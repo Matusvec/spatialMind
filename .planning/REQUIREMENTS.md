@@ -36,9 +36,9 @@ Requirements for hackathon demo. Each maps to roadmap phases.
 
 - [x] **UI-01**: Spark.js renders photorealistic Gaussian splat scene in browser at interactive framerates
 - [x] **UI-02**: Chat interface accepts natural language queries and displays agent responses
-- [ ] **UI-03**: Semantic highlight overlays — matching Gaussians change color/opacity in the 3D scene based on query results
+- [x] **UI-03**: Semantic highlight overlays — matching Gaussians change color/opacity in the 3D scene based on query results
 - [ ] **UI-04**: 3D graph overlay — object nodes and spatial edges rendered floating in the scene at their 3D positions
-- [ ] **UI-05**: Probability cloud heatmap visualization showing continuous semantic field intensity
+- [x] **UI-05**: Probability cloud heatmap visualization showing continuous semantic field intensity
 
 ### Backboard Integration
 
@@ -121,9 +121,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GRAPH-06 | Phase 4 | Complete |
 | UI-01 | Phase 5 | Complete |
 | UI-02 | Phase 5 | Complete |
-| UI-03 | Phase 5 | Pending |
+| UI-03 | Phase 5 | Complete |
 | UI-04 | Phase 5 | Pending |
-| UI-05 | Phase 5 | Pending |
+| UI-05 | Phase 5 | Complete |
 | BB-01 | Phase 4 | Complete |
 | BB-02 | Phase 4 | Complete |
 | BB-03 | Phase 4 | Complete |

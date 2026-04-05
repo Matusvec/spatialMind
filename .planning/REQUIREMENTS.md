@@ -34,8 +34,8 @@ Requirements for hackathon demo. Each maps to roadmap phases.
 
 ### Frontend (Partner)
 
-- [ ] **UI-01**: Spark.js renders photorealistic Gaussian splat scene in browser at interactive framerates
-- [ ] **UI-02**: Chat interface accepts natural language queries and displays agent responses
+- [x] **UI-01**: Spark.js renders photorealistic Gaussian splat scene in browser at interactive framerates
+- [x] **UI-02**: Chat interface accepts natural language queries and displays agent responses
 - [ ] **UI-03**: Semantic highlight overlays — matching Gaussians change color/opacity in the 3D scene based on query results
 - [ ] **UI-04**: 3D graph overlay — object nodes and spatial edges rendered floating in the scene at their 3D positions
 - [ ] **UI-05**: Probability cloud heatmap visualization showing continuous semantic field intensity
@@ -51,8 +51,8 @@ Requirements for hackathon demo. Each maps to roadmap phases.
 
 ### InsForge Integration
 
-- [ ] **INS-01**: S3-compatible storage hosts PLY files, .npy embeddings, and autoencoder weights
-- [ ] **INS-02**: PostgreSQL stores scene metadata (scene ID, training status, object count, bounding box, thumbnails)
+- [x] **INS-01**: S3-compatible storage hosts PLY files, .npy embeddings, and autoencoder weights
+- [x] **INS-02**: PostgreSQL stores scene metadata (scene ID, training status, object count, bounding box, thumbnails)
 - [ ] **INS-03**: User authentication via InsForge auth for multi-user scene libraries
 - [ ] **INS-04**: Frontend fetches scene list from InsForge DB and loads splat files from InsForge storage
 
@@ -119,8 +119,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GRAPH-04 | Phase 3 | Complete |
 | GRAPH-05 | Phase 4 | Complete |
 | GRAPH-06 | Phase 4 | Complete |
-| UI-01 | Phase 5 | Pending |
-| UI-02 | Phase 5 | Pending |
+| UI-01 | Phase 5 | Complete |
+| UI-02 | Phase 5 | Complete |
 | UI-03 | Phase 5 | Pending |
 | UI-04 | Phase 5 | Pending |
 | UI-05 | Phase 5 | Pending |
@@ -130,8 +130,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BB-04 | Phase 4 | Complete |
 | BB-05 | Phase 4 | Complete |
 | BB-06 | Phase 4 | Complete |
-| INS-01 | Phase 5 | Pending |
-| INS-02 | Phase 5 | Pending |
+| INS-01 | Phase 5 | Complete |
+| INS-02 | Phase 5 | Complete |
 | INS-03 | Phase 5 | Pending |
 | INS-04 | Phase 5 | Pending |
 | DEMO-01 | Phase 6 | Pending |

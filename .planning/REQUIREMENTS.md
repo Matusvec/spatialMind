@@ -37,7 +37,7 @@ Requirements for hackathon demo. Each maps to roadmap phases.
 - [x] **UI-01**: Spark.js renders photorealistic Gaussian splat scene in browser at interactive framerates
 - [x] **UI-02**: Chat interface accepts natural language queries and displays agent responses
 - [x] **UI-03**: Semantic highlight overlays — matching Gaussians change color/opacity in the 3D scene based on query results
-- [ ] **UI-04**: 3D graph overlay — object nodes and spatial edges rendered floating in the scene at their 3D positions
+- [x] **UI-04**: 3D graph overlay — object nodes and spatial edges rendered floating in the scene at their 3D positions
 - [x] **UI-05**: Probability cloud heatmap visualization showing continuous semantic field intensity
 
 ### Backboard Integration
@@ -53,8 +53,8 @@ Requirements for hackathon demo. Each maps to roadmap phases.
 
 - [x] **INS-01**: S3-compatible storage hosts PLY files, .npy embeddings, and autoencoder weights
 - [x] **INS-02**: PostgreSQL stores scene metadata (scene ID, training status, object count, bounding box, thumbnails)
-- [ ] **INS-03**: User authentication via InsForge auth for multi-user scene libraries
-- [ ] **INS-04**: Frontend fetches scene list from InsForge DB and loads splat files from InsForge storage
+- [x] **INS-03**: User authentication via InsForge auth for multi-user scene libraries
+- [x] **INS-04**: Frontend fetches scene list from InsForge DB and loads splat files from InsForge storage
 
 ### Demo
 
@@ -122,7 +122,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UI-01 | Phase 5 | Complete |
 | UI-02 | Phase 5 | Complete |
 | UI-03 | Phase 5 | Complete |
-| UI-04 | Phase 5 | Pending |
+| UI-04 | Phase 5 | Complete |
 | UI-05 | Phase 5 | Complete |
 | BB-01 | Phase 4 | Complete |
 | BB-02 | Phase 4 | Complete |
@@ -132,8 +132,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BB-06 | Phase 4 | Complete |
 | INS-01 | Phase 5 | Complete |
 | INS-02 | Phase 5 | Complete |
-| INS-03 | Phase 5 | Pending |
-| INS-04 | Phase 5 | Pending |
+| INS-03 | Phase 5 | Complete |
+| INS-04 | Phase 5 | Complete |
 | DEMO-01 | Phase 6 | Pending |
 | DEMO-02 | Phase 6 | Pending |
 | DEMO-03 | Phase 6 | Pending |

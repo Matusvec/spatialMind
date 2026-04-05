@@ -96,7 +96,7 @@ Plans:
 Plans:
 - [x] 05-01-PLAN.md — Backend /api adapter router bridging frontend API expectations to real endpoints
 - [x] 05-02-PLAN.md — Spark.js semantic highlighting and probability cloud heatmap via Dyno API
-- [ ] 05-03-PLAN.md — 3D graph overlay and InsForge scene list with auth stub
+- [x] 05-03-PLAN.md — 3D graph overlay and InsForge scene list with auth stub
 **UI hint**: yes
 
 ### Phase 6: Demo Integration
